@@ -314,6 +314,55 @@
     }
 }
 
+{
+    import {memo, useEffect, useState} from 'react';
+
+    type Props = {
+        counter: number
+    }
+
+    const Component = memo((props: Props) => {
+        useEffect(() => {
+            console.log('Component has been rendered!')
+        })
+
+        return <h1>{props.counter}</h1>
+    }) 
+
+    type DeeperProps = {
+        counter: {
+            counter: number
+        }
+    }
+
+    // props 의 depth가 깊어지는 경우 실제로 변경된 값이 없음에도 불하고 메모이제이션된 컴포넌트 반환 불가
+    const DeeperComponent = memo((props: DeeperProps) => {
+        useEffect(() => {
+            console.log('DeeperComponent has been rendered!')
+        })
+
+        return <h1>{props.counter.counter}</h1>
+    })
+
+    export default function App(){
+        const [, setCounter] = useState(0)
+
+        function handleClick(){
+            setCounter((prev) => prev + 1)
+        }
+
+        return (
+            <div className="App">
+                {/* 리렌더링 방지 가능 */}
+                <Component counter={100} />
+                {/* 리렌더링 방지 불가 */}
+                <DeeperComponent counter={{counter: 100}} />
+                <button onClick={handleClick}>+</button>
+            </div>
+        )
+    }
+}
+
 
 
 

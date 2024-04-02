@@ -313,3 +313,37 @@
         return Car
     })()
 }
+
+{
+    // 위 코드를 보기 쉽게 변경
+    var Car = (function(){
+        function Car(name){
+            this.name = name
+        }
+
+        // 프로토타입 메서드 실제로 프로토타입에 할당해야 프로토타입 메서드로 작동
+        Car.prototype.honk = function(){
+            console.log(`${this.name}이 경적을 울립니다!`)
+        }
+
+        // 정적 메서드 인스턴스 생성 없이 바로 호출 가능하므로 직접 할당
+        Car.hello = function(){
+            console.log('저는 자동차입니다')
+        }
+
+        // Car 객체에 속성을 직접 정의
+        Object.defineProperty(Car, 'age', {
+            // get과 set은 각각 접근자, 설정자로 사용할 수 있는 예약어
+            //getter
+            get: function(){
+                return this.carAge
+            },
+            //setter
+            set: function(value){
+                this.carAge = value
+            },
+        })
+
+        return Car
+    })()
+}

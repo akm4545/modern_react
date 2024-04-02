@@ -94,5 +94,123 @@
 }
 
 {
-    
+    // 전역 스코프는 누구든 접근 가능
+    var counter = 0
+
+    function handleClick(){
+        counter++
+    }
+
+    // 리액트가 관리하는 내부 상태 값은 리액트가 별도로 관리하는 클로저 내부에서만 접근 가능
+
+    // 클로저 활용 코드로 변경
+    function Counter(){
+        var counter = 0
+
+        return {
+            increase: function(){
+                return ++counter
+            },
+            decrease: function(){
+                return --counter
+            },
+            counter: function(){
+                console.log('counter에 접근!')
+                return counter
+            },
+        }
+    }
+
+    var c = Counter()
+
+    console.log(c.increase()) //1
+    console.log(c.increase()) //2
+    console.log(c.increase()) //3
+    console.log(c.decrease()) //2
+    console.log(c.counter) //2
+
+    // 클로저 사용시 이점
+    // 사용자가 직접 수정 막음
+    // 접근하는 경우를 제한해 로그를 남기는 등의 부차적인 작업 수행 가능
+    // 변수 수정을 해당 함수에 맡겨 무분별하게 변경되는 것을 막음
+    // 전역 스코프의 사용을 막고 개발자가 원하는 정보만 원하는 방향으로 노출 가능
+}
+
+{
+    // 리액트의 클로저 사용 훅 예시 = useState
+    function Component(){
+        const [state, setState] = useState()
+
+        function handleClick(){
+            //useState 호출은 위에서 끝났지만
+            //setState는 계속 내부의 최신값(prev)을 알고 있다
+            // 클로저 떄문
+            setState((prev) => prev + 1)
+        }
+    }
+}
+
+{
+    // 의도 = 1초 간격으로 0, 1, 2, 3, 4를 차례대로 출력
+    // 실행 = 5만 출력 
+    // var 가 전역변수이기 때문에 for문을 순회 후 태스크 큐에 있는 setTimeout 실행 시 i = 5로 업데이트
+    for (var i=0; i<5; i++){
+        setTimeout(function(){
+            console.log(i)
+        }, i * 1000)
+    }
+
+    // 함수 레벨 스코프가 아닌 블록 레벨 스코프를 가지는 let으로 수정
+    for (let i=0; i<5; i++){
+        setTimeout(function(){
+            console.log(i)
+        }, i * 1000)
+    }
+
+    // 클로저를 제대로 활용
+    for(var i=0; i<5; i++){
+        setTimeout(
+            (function(sec){
+                return function(){
+                    console.log(sec)
+                }
+            })(i),
+            i * 1000,
+        )
+    }
+
+    // 클로저는 환경을 기억해야 하므로 추가로 비용이 발생
+
+    // 예시 코드
+    // 일반적인 함수
+    // 메모리 용량에 영향을 미치지 않음
+    const aButton = document.getElementById('a')
+
+    function heavyJob(){
+        const longArr = Array.from({length: 10000000}, (_, i) => i + 1)
+        console.log(longArr.length)
+    }
+
+    aButton.addEventListener('click', heavyJob)
+
+    // 클로저
+    // 해당 코드는 약 40MB 차지
+    function heavyJobWithClosure(){
+        const longArr = Array.from({length: 10000000}, (_, i) => i + 1)
+
+        return function(){
+            console.log(longArr.length)
+        }
+    }
+
+    const innerFunc = heavyJobWithClosure()
+    bButton.addEventListener('click', function(){
+        innerFunc()
+    })
+}
+
+{
+    // 클로저는 함수형 프로그래밍의 중요한 개념 
+    // 부수 효과가 없고 순수해야 한다는 목적을 당성하기 위해 적극적으로 사용되는 개념
+    // 공짜가 아니기 때문에 항상 주의를 기울여야 한다
 }

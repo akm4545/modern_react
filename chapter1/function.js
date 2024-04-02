@@ -61,3 +61,82 @@
     // 함수 호출로 sum을 사용 add는 함수 내부에서만 유효한 식별자 외부에서 호출할때 사용 불가
     // 함수 표현식에 함수에 이름을 주는 것은 함수 호출에 도움이 전혀 안되는 코드를 읽는데 방해가 될 수 있는 요소
 }
+
+{
+    // 호이스팅으로 인해 함수가 메모리에 등록되고 어느 위치에서 호출해도 작동
+
+    hello() //hello
+
+    function hello() {
+        console.log('hello')
+    }
+
+    hello() //hello
+}
+
+{
+    // 변수도 호이스팅이 되지만 undefined로 초기화
+    // 할당문이 실행되는 시점 즉 런타인 시점에서 할당되어 작동
+    console.log(typeof hello === 'undefined') //true
+
+    hello() //error
+
+    var hello = function() {
+        console.log('hello')
+    }
+
+    hello()
+}
+
+{
+    // Function 생성자
+    // add 함수 예제
+    // 함수의 클로저 생성 X
+    // eval 만큼이나 실제 코딩에서 사용하지 않음
+    const add = new Function('a', 'b', 'return a + b')
+
+    add(10, 24) // 34 
+}
+
+{
+    // 화살표 함수
+    const add = (a, b) => {
+        return a + b
+    }
+
+    const add1 = (a, b) => a + b
+
+    // 생성자 사용 불가
+    const Car = (name) => {
+        this.name = name
+    }
+
+    //error
+    const myCar = new Car('하이')
+
+    // 화살표 함수에는 arguments 존재 x
+    function hello() {
+        conconle.log(arguments)
+    }
+
+    // Argument(3) [1, 2, 3, callee: f, Symbol(Symbol.iterator): f] 
+    hello(1, 2, 3)
+
+    const hi = () => {
+        console.log(arguments)
+    }
+
+    //error
+    hi(1, 2, 3)
+
+    //this 바인딩의 차이도 존재
+    // 컴포넌트에서 이벤트 바인딩 함수도 이에 따라 차이가 존재
+    // 함수가 어떻게 호출되느냐에 따라 this의 값 변경
+    // 일반 함수로 호출 시 this는 전역 객체를 가리킴
+    // 화살표 함수 this는 상위 this를 따름
+}
+
+{
+    // this 바인딩 예제
+    
+}

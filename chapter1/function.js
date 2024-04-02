@@ -138,5 +138,144 @@
 
 {
     // this 바인딩 예제
-    
+    class Component extends React.Component {
+        constructor(props){
+            super(props)
+            this.state = {
+                counter: 1,
+            }
+        }
+    }
+
+    functionCountUp(){
+        console.log(this) //undefined
+        this.setState((prev) => ({counter: prev.counter + 1}))
+    }
+
+    ArrowFunctionCountUp = () => {
+        console.log(this) // class Component
+        this.setState((prev) => ({counter: prev.counter + 1}))
+    }
+
+    render(){
+        return (
+            <div>
+                {/* Cannot read properties ... 'setState' */}
+                <button onClick={this.functionCountUp}>일반 함수</button>
+                {/* 정상작동 */}
+                {/* 별도의 작업을 추가로 하지 않고 this에 접근 가능 */}
+                <button onClick={this.ArrowFunctionCountUp}>화살표 함수</button>
+            </div>
+        )
+    }
+}
+
+{
+    // 바벨 트랜스파일링의 함수 차이
+    // 트랜스파일 전
+    const hello = () => {
+        console.log(this)
+    }
+
+    function hi(){
+        console.log(this)
+    }
+
+    //트랜스파일된 결과: 바벨 변경
+    var _this = void 0
+
+    var hello = function hello(){
+        // 바벨에서는 화살표 함수 내부의 _this 자체를 undefined로 바꿔버린다
+        console.log(_this)
+    }
+
+    function hi(){
+        console.log(this)
+    }
+
+    // 화살표 함수는 this 선언 시점에 이미 상위 스코프로 결정
+    // _this를 받아서 사용
+    // 일반 함수는 런타임 시점에 결정되는 this 사용
+    // 화살표 함수를 단순히 일반 함수의 축약형이라고 보기엔 무리가 있음
+}
+
+{
+    // 즉시 실행 함수 (IIFE)
+    // 함수를 정의하고 그 순간 즉시 실행
+    // 단 한번 실행하고 호출 불가
+    // 글로벌 스코프를 오염시키지 않는 독립적인 함수 스코프 운영 가능
+    // 선언과 실행이 동시에 일어나므로 내부의 값은 함수 내부가 아니면 접근 불가
+    // 리펙터링에도 도움 (선언만으로 실행이 거기서 끝나는 것을 각인시킬 수 있기 떄문)
+    (function (a, b){
+        return a + b
+    })(10, 24); //34
+
+    ((a, b) => {
+        return a + b
+      }
+    )(10, 24) //34
+}
+
+{
+    // 고차 함수
+    // 함수를 인수로 받거나 결과로 새로운 함수 반환
+
+    // Array.prototype.map
+    const doubledArray = [1, 2, 3].map((item) => item + 2)
+
+    doubledArray // [2, 4, 6]
+
+    // 함수를 반환하는 고차 함수의 예
+    // 컴포넌트를 인수로 받아 함수 컴포넌트를 반환하는 고차 함수 생성 가능
+    // 이를 고차 컴포넌트라 부름
+    // 고차 함수 컴포넌트 작성 시 내부에서 공통으로 관리되는 로직을 분리해 관리할 수 있어 효과적인 리펙터링이 가능
+    const add = function (a){
+        // a가 존재하는 클로저를 생성
+        return function(b){
+            // b를 인수로 받아 두 합을 반환하는 또 다른 함수를 생성
+            return a + b
+        }
+    }
+
+    add(1)(3) //4
+}
+
+{
+    // 함수 작성 시 주의사항
+    // 1. 함수의 부수 효과를 최대한 억제
+    // 함수 내의 작동으로 인해 함수가 아닌 함수 외부에 영향을 끼치는 것 = 함수의 부수 효과 (side-effect)
+    // 순수 함수 = 함수의 부수 효과가 없고 언제 어디서나 동일한 인수를 받으면 동일한 결과 반환 외부에 어떤 영향도 미치지 않음
+
+    // 순수 컴포넌트 예
+    function PureComponent(props){
+        const {a, b} = props
+        return <div>{a + b}</div>
+    }
+
+    // 부수효과는 피할 수 없지만 최대학 억제하는 방향으로 설계
+    // 리액트의 관점에서 본다면 부수 효과를 처리하는 훅인 useEffect의 작동을 최소화하는것이 그 일환
+    // useEffect를 최소한으로 줄임으로써 함수의 역할을 좁히고 버그를 줄이며 컴포넌트 안정성을 높임
+}
+
+{
+    // 2. 가능한 한 함수를 작게 만들어라
+    // ESLint에는 max-lines-per-function이라는 규칙이 존재
+    // 함수가 50줄이 넘어가면 과도하게 커진 함수로 분류하고 경고 메세지 출력 = 코드가 길어질수록 코드 냄새(문제를 일으킬 여지가 있는 코드)가 날 확률이 커짐
+    // 내부에서 무슨 일이 일어나는지 추적하기 어려움
+    // 그 외에도 중첩, 콜백이 얼마나 많은지도 확인 가능
+    // 함수는 하나의 일을 해야함
+}
+
+{
+    // 3. 누구나 이해할 수 있는 이름을 붙여라
+    // 가능한 간결하고 이해하기 쉽게 붙여라
+    // Terser가 설치돼 있다면 한글로 네이밍 하는것도 좋은 방법이다
+    // Terser는 자바스크립트 코드를 맹글링 (코드를 컴파일러가 이해할 수 있는 수준에서 단순화) 및 압축 도구
+    // 실제 서비스 코드에는 영향을 미치지 않는다
+
+    // uesEffect나 useCallback등의 훅에 넘겨주는 콜백 함수에 네이밍을 붙여주면 가독성에 도움이 됨
+    // useEffect의 콜백 함수에 이름을 붙여도 apiRequest()로 접근은 불가능하지만 이름으로 유추해 코드를 보는데 도움
+    useEffect(function apiRequest(){
+        // ...
+    }, [])  
 }

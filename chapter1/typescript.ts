@@ -39,4 +39,111 @@
 
 {
     // never 리액트 사용 예시 
+    // props는 없지만 state는 존재하는 상황에서 어떠한 props도 받아들이지 않는다는 뜻으로 사용
+
+    // string이 키지만 값은 never 
+    // 어떠한 값도 올 수 없다
+    type Props = Record<string, never>
+    type State = {
+        counter: 0
+    }
+
+    // React.component<Props, State> 순으로 제네릭 작성
+    // 어떠한 props도 받을 수 없다
+    // state는 존재
+    class SampleComponent extends React.component<Props, State>{
+        constructor(props: Props){
+            super(props)
+            this.state = {
+                counter: 0,
+            }
+        }
+
+        render() {
+            return <>
+                // ...
+            </>
+        }
+    }
+
+    export default function App(){
+        return (
+            <>
+                // ok
+                <SampleComponent />
+                // error
+                <SampleComponent hello="world" />
+            </>
+        )
+    }
+}
+
+{
+    // 타입 가드를 적극 활용
+    // 타입을 좁히는데 도움을 줌
+    // 조건문과 함께 타입 가드를 사용 시 효과적을 ㅗ좁힐 수 있음
+}
+
+{
+    // instanceof
+    // 지정한 인스턴스가 특정 클래스의 인스턴스인지 확인할 수 있는 연산자
+
+    // instanceof를 활용한 타입가드 예제
+    class UnAuthorizedError extends Error{
+        constructor(){
+            super()
+        }
+
+        get message(){
+            return '인증에 실패했습니다.'
+        }
+    }
+
+    class UnExpectedError extends Error {
+        constructor(){
+            super()
+        }
+
+        get message(){
+            return '예상치 못한 에러가 발생했습니다.'
+        }
+    }
+
+    async function fetchSomething(){
+        try{
+            const response = await fetch('/api/something')
+
+            return await response.json()
+        }catch(e){
+            // e는 unknown이다
+            // 해당 타입 가드를 통해 각 에러에 따라 원하는 처리 내용을 추가할 수 있다
+
+            // UnAuthorizedError를 위한 타입 가드 조건문
+            if(e instanceof UnAuthorizedError){
+                // do something...
+            }
+
+            // UnExoectedError을 위한 타입 가드 조건문
+            if(e instanceof UnExpectedError){
+                // do something...
+            }
+
+            throw e
+        }
+    }
+}
+
+{
+    // typeof
+    // 특정 요소에 대해 자료형을 확인
+    function logging(value: string | undefined){
+        if(typeof value === 'string'){
+            console.log(value)
+        }
+
+        if(typeof value === 'undefined'){
+            // nothing to do
+            return
+        }
+    }
 }

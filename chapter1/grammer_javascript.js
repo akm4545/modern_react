@@ -498,3 +498,42 @@
     // 2 
     // 3
 }
+
+{
+    // 삼항 조건 연산자
+    const value = 10
+    const result = value % 2 === 0 ? '짝수' : '홀수'
+    // 짝수
+
+    // if 조건문을 간단하게 쓸 수 있어 JSX 내부에 조건부 렌더링을 위해 많이 쓰임
+    function Component({condition}){
+        return <>{condition ? '참' : '거짓'}</>
+    }
+
+    // 삼항 조건 연산자의 중첩은 가독성이 떨어지므로 사용하지 않는 편이 좋다
+    const value = useMemo(
+        () => (condition1 ? '1' : condition2 ? '2' : condition3 ? '3' : 'else'),
+        [condition1, condition2, condition3],
+    )
+        
+    // JSX 내부에서 상항 연산자를 가장 많이 쓰는 이유는 간결하기 떄문이며 이 외에도 조건부 렌더링을 구현할 수 있다
+    // JSX 내부의 가독성을 해치고 불필요하게 즉시 실행 함수를 선언해서 사용해야 한다는 점 때문에 선호되지 않는다
+    
+    import {useState} from 'react'
+
+    export default function App(){
+        const [color, setColor] = useState('')
+
+        return (
+            <div>
+                {(() => {
+                    if(color === 'red'){
+                        return '빨간색이다.'
+                    }else{
+                        return '빨간색이 아니다.'
+                    }
+                })()}
+            </div>
+        )
+    }
+}

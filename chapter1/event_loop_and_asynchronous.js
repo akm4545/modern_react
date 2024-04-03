@@ -94,10 +94,104 @@
     // 이벤트 루프는 태스크 큐를 한 개 이상 가지고 있음
     // 큐 형태가 아니고 set의 형태
     // 살행해야 할 태스크 = 비동기 함수의 콜백 함수나 이벤트 핸들러 등
-    
+
     // 즉 이벤트 루프 = 호출 스택에 실행 중인 코드가 있는지 태스크 큐에 대기 중인 함수가 있는지 박복해서 확인
     // 호출 스택이 비었다면 태스크 큐에서 대기 중인 작업이 있는지 확인하고 실행 가능한 오래된 것부터 순차적으로 꺼내와서 실행
     // 비동기 함수 수행은 메인 스레드가 아닌 태스크 큐가 할당되는 별도의 스레드에서 수행 (브라우저)
     // 자바스크립트 코드 외부에서 실행되고 콜백이 태스크 큐로 들어가는 형태
     // 이벤트 루프는 콜백이 실행 가능한 때가 오면 이것을 꺼내서 수행하는 역할
+}
+
+{
+    // 마이크로 태스크 큐
+    // 이벤트 루프는 하나의 마이크로 태스크 큐를 가지고 있음
+    // 태스크 큐와는 다른 태스크 처리
+    // 대표적으로 Promise가 있다
+    // 마이크로 태스크 큐는 태스크 큐보다 우선권을 갖는다
+    // setTimeout과 setInterval은 Promise보다 늦게 실행
+    // 마이크로 큐가 빌 때까지는 기존 태스크 큐의 실행은 뒤로 밀림
+
+    // bar, baz, foo 순으로 실행
+    function foo(){
+        console.log('foo')
+    }
+
+    function bar(){
+        console.log('bar')
+    }
+
+    function baz(){
+        console.log('baz')
+    }
+
+    setTimeout(foo, 0)
+
+    Promise.resolve().then(bar).then(baz)
+
+    // 큐에 할당되는 대표적인 작업
+    // 태스크 큐: setTimeout, setInterval, setImmediate
+    // 마이크로 큐: process.nextTick, Promises, queueMicroTask, MutationObserver
+}
+
+{
+    // 렌더링 순서
+    // 마이크로 태스크 큐 -> 렌더링 (각 마이크로 태스크 큐 작업이 끝날 때마다)
+    <html>
+        <body>
+            <ul>
+                <li>동기 코드: <button id="sync">0</button></li>
+                <li>태스크: <button id="macrotask">0</button></li>
+                <li>마이크로 태스크: <button id="microtask">0</button></li>
+            </ul>
+
+            <button id="macro_micro">모두 동시 실행</button>
+        </body>
+        <script>
+            const button = document.getElementById('run')
+            const sync = documenr.getElementById('sync')
+            const macrotask = document.getElementById('macrotask')
+            const microtask = document.getElementById('microtask')
+
+            const macro_micro = document.getElementById('macro_micro')
+
+            {/* 동기 코드로 버튼에 1부터 렌더링 */}
+            sync.addEventListener('click', function() {
+                for(let i=0; i<=10000; i++){
+                    sync.innerHTML = i
+                }
+            })
+
+            {/* setTimeout으로 태스크 큐에 작업을 넣어서 1부터 렌더링 */}
+            macrotask.addEventListener('click', function(){
+                for(let i=0; i<=10000; i++){
+                    setTimeout(() => {
+                        macrotask.innerHTML = i
+                    }, 0)
+                }
+            })
+
+            {/* queueMicrotask로 마이크로 태스크 큐에 넣어서 1부터 렌더링 */}
+            microtask.addEventListener('click', function(){
+                for(let i=0; i<=10000; i++){
+                    queueMicrotask(() => {
+                        queueMicrotask.innerHTML = i
+                    })
+                }
+            })
+
+            macro_micro.addEventListener('click', function(){
+                for(let i=0; i<=10000; i++){
+                    sync.innerHTML = i
+
+                    setTimeout(() => {
+                        macrotask.innerHTML = i
+                    }, 0)
+
+                    queueMicroTask(() => {
+                        microtask.innerHTML = i
+                    })
+                }
+            })
+        </script>
+    </html>
 }

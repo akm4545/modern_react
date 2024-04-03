@@ -211,3 +211,169 @@
         b = object.b,
         rest = _objectWithoutProperties(object, ['a', 'b'])
 }
+
+{
+    // 전개 구문
+    // 순회할 수 있는 값에 대해 전개해 간결하게 사용할 수 있는 구문
+    // 과거에는 배열 간에 합성을 하려면 push(), concat(), splice()등의 메서드를 사용해야 했음
+    
+    // 전개 구문을 사용한 합성
+    const arr1 = ['a', 'b']
+    const arr2 = [...arr1, 'c', 'd', 'e'] // ['a', 'b', 'c', 'd', 'e']
+}
+
+{
+    // 전개 구문을 사용한 배열 복사
+    const arr1 = ['a', 'b']
+    const arr2 = arr1
+
+    arr1 === arr2 //true 내용이 아닌 참조 복사
+
+    const arr3 = ['a', 'b']
+    const arr4 = [...arr3]
+
+    arr3 === arr4 //false 값만 복사
+}
+
+{
+    // 객체의 전개 구문
+    const obj1 = {
+        a: 1,
+        b: 2
+    }
+
+    const obj2 = {
+        c: 3,
+        d: 4
+    }
+
+    const newObj = {...obj1, ...obj2}
+    //{"a": 1, "b": 2, "c": 3, "d": 4}
+}
+
+{
+    // 객체 전개 구문 순서에 따른 차이
+    const obj = {
+        a: 1,
+        b: 1,
+        c: 1,
+        d: 1,
+        e: 1,
+    }
+
+    // {a: 1, b:1, c: 10, d: 1, e: 1}
+    const aObj = {
+        ...obj,
+        c: 10,
+    }
+
+    //{c: 1, a: 1, b: 1, d: 1, e: 1}
+    const bObj = {
+        c: 10,
+        ...obj,
+    }
+
+    // 전개 구문이 앞에 = 할당한 값이 전개 구문 값을 덮어 씌움
+    // 전개 구문이 뒤에 = 전개 구문이 해당 값을 덮어 씌움
+}
+
+{
+    // 배열 전개 구문 트랜스파일
+    // 트랜스파일 전
+    const arr1 = ['a', 'b']
+    const arr2 = [...arr1, 'c', 'd', 'e']
+
+    // 트랜스파일 후
+    var arr1 = ['a', 'b']
+    var arr2 = [].concat(arr1, ['c', 'd', 'e'])
+}
+
+{
+    // 객체 전개 구문 트랜스파일
+    // 객체 구조 분해 할당과 마찬가지로 번들링이 커지기 때문에 주의 필요
+    // 트랜스파일 전
+    const obj1 = {
+        a: 1,
+        b: 2,
+    }
+
+    const obj2 = {
+        c: 3,
+        d: 4,
+    }
+
+    const newObj = {...obj1, ...obj2}
+
+    // 트랜스파일 후
+    function ownKeys(object, enumerableOnly){
+        var keys = Object.keys(object)
+
+        if(Object.getOwnPropertySymbols){
+            var symbols = Object.getOwnPropertySymbols(object)
+
+            enumerableOnly && 
+                (symbols = symbols.filter(function (sym){
+                    return Object.getOwnPropertyDescriptor(object, sym).enumerable
+                })),
+                keys.push.apply(keys, symbols)
+        }
+
+        return keys
+    }
+
+    function _objectSpread(target){
+        for(var i=1; i<arguments.length; i++){
+            var source = null != arguments[i] ? arguments[i] : {}
+            i % 2
+                ? ownKeys(Object[source], !0).forEach(function (key){
+                    _defineProperty(target, key, source[key])
+                })
+                : Object.getOwnPropertyDescriptors
+                ? Object.defineProperties(
+                    target,
+                    Object.getOwnPropertyDescriptors(source),
+                )
+                : ownKeys(Object(source)).forEach(function (key){
+                    Object.defineProperty(
+                        target,
+                        key,
+                        Object.getOwnPropertyDescriptor(source, key),
+                    )
+                })
+        }
+
+        return target
+    }
+
+    function _defineProperty(obj, key, value){
+        if(key in obj){
+            Object.defineProperty(obj, key, {
+                value: value,
+                enumerable: true,
+                configurable: true,
+                writable: true,
+            })
+        }else{
+            obj[key] = value
+        }
+
+        return ojb
+    }
+
+    var obj1 = {
+        a: 1,
+        b: 2,
+    }
+
+    var obj2 = {
+        c: 3,
+        d: 4,
+    }
+
+    var newObj = _objectSpread(_objectSpread({}, obj1), obj2)
+}
+
+{
+    // 객체 초기자
+    // 
+}

@@ -147,3 +147,87 @@
         }
     }
 }
+
+{
+    // in 
+    // 어떤 객체에 키가 존재하는지 확인 용도
+    // 타입에 여러가지 객체가 있을 경우 유용
+    interface Student {
+        age: number
+        score: number
+    }
+
+    interface Teacher {
+        name: string
+    }
+
+    function doSchool(person: Student | Teacher) {
+        if('age' in person){
+            person.age // person = Student
+            person.score
+        }
+
+        if('name' in person){
+            person.name // person = Teacher
+        }
+    }
+}
+
+{
+    // 제네리
+    // 함수나 클래스 내부에서 단일 타입이 아닌 다양한 타입에 대응할 수 있도록 도와줌
+    // 제네릭을 사용하면 타입만 다른 비슷한 작업을 하는 컴포넌트를 단일 제네릭 컴포넌트로 선언해 간결하게 작성 가능
+
+    // 하나의 타입으로 이루어진 배열의 첫 번째와 마지막 요소를 반환하는 함수 예제
+    // 다양한 타입에 대응하기 위해 any나 unknown을 사용
+    function getFirstAndLast(list: unknown[]){
+        return [list[0], list[list.length - 1]]
+    }
+
+    const [first, last] = getFirstAndLast([1, 2, 3, 4, 5])
+
+    // 결과물도 unknown
+    first // unknown
+    last // unknown
+
+    // 제네릭 사용 시 
+    // 제네릭 사용으로 다양한 타입을 하나의 함수로 처리
+    //       함수명           <제네릭>(인수: 제네릭): 리턴타입 제네릭 { ...}
+    function getFirstAndLast2<T>(list: T[]): [T, T] {
+        return [list[0], list[list.length - 1]]
+    }
+
+    const [first2, last2] = getFirstAndLast2([1, 2, 3, 4, 5])
+
+    first2 // number
+    last2 // number
+
+    const [first3, last3] = getFirstAndLast2(['a', 'b', 'c', 'd', 'e'])
+
+    first3 // string
+    last3 // string
+}
+
+{
+    // 리액트 제네릭 예시 (useState)
+    function Component(){
+        // state: string
+        // 제네릭 사용으로 state 사용과 기본값 선언을 좀 더 명확하게 함
+        // useState의 경우 기본값을 넘기지 않고 사용하는 경우가 많은데 이 경우 값을 undefined로 추론
+        const [state, setState] = useState<string>('')
+        //...
+    }
+}
+
+{
+    // 다중 제네릭 사용
+    // T, U 등으로 표현시 의미가 명확하지 않으므로 적절한 네이밍 추천
+    function multipleGeneric<First, Last>(a1: First, a2: Last): [First, Last] {
+        return [a1, a2]
+    }
+
+    const [a, b] = multipleGeneric<string, boolean>('true', true)
+
+    a //string
+    b //boolean
+}

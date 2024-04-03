@@ -375,5 +375,126 @@
 
 {
     // 객체 초기자
-    // 
+    // 객체 선언 시 넣고자 하는 키와 값을 가지고 있는 변수가 이미 존재한다면 해당 값을 간결하게 넣어줄 수 있는 방식
+
+    const a = 1
+    const b = 2
+
+    const obj = {
+        a, 
+        b,
+    }
+
+    // {a: 1, b: 2}    
+}
+
+{
+    // 객체 초기자 트랜스파일 
+    // 트랜스파일 전
+    const a = 1
+    const b = 2
+
+    const obj = {
+        a, 
+        b,
+    }
+
+    // 트랜스파일 후
+    var a = 1
+    var b = 2
+    var obj = {
+        a: a,
+        b: b,
+    }
+}
+
+{
+    // Array 프로토타입(내장함수) 메서드 (map, filter, reduce)
+    // JSX 내부에서 배열을 조작해 바로 원하는 JSX를 반환하는 특성상 자주 쓰인다
+}
+
+{
+    // map
+    // 배열을 순회하면서 콜백으로 연산된 결과로 새 배열 구성
+    const arr = [1, 2, 3, 4, 5]
+    const doubledArr = arr.map((item) => item * 2)
+    // [2, 4, 6, 8, 10]
+
+    // 리액트
+    // 주로 특정 배열을 기반으로 리액트 요소를 반환하고자 할 때 많이 사용
+    const arr2 = [1, 2, 3, 4, 5]
+    const Elements = arr.map((item) => {
+        return <Fragment key={item}>{itme}</Fragment>
+    })
+}
+
+{
+    // filter
+    // 콜백에서 truthy 조건을 만족하는 경우 해당 원소를 반환하여 새로운 배열을 구성
+    const arr = [1, 2, 3, 4, 5]   
+    const evenArr = arr.filter((item) => item % 2 === 0)
+    //[2, 4]
+}
+
+{
+    // reduce
+    // reduce의 두 번째 인수는 초깃값
+    // 콜백 함수를 받는데 콜백 함수의 첫 번째 인수는 초깃값의 현재값을 의미, 두 번째 인수는 현재 배열의 아이템을 의미
+    // 초깃값에 누적하면서 새로운 값을 만든다
+    const arr = [1, 2, 3, 4, 5]
+    const sum = arr.reduce((result, item) => {
+        return result + item
+    }, 0)
+
+    //15
+
+    // 배열을 하나의 객체로 변환하는등 응용 가능
+    // filter와 map의 작동을 reduce 하나로도 구현 가능
+    // 사용법이 복잡해 코드가 직관적이지 않다
+    
+    // 짝수만 100을 곱해 반환 예제
+    const arr2 = [1, 2, 3, 4, 5]
+
+    // [200, 400]
+    const result1 = arr2.filter((item) => item % 2 === 0).map((item) => item * 100)
+
+    // [200, 400]
+    const result2 = arr2.reduce((result, item) => {
+        if(item % 2 === 0){
+            result.push(item * 100)
+        }
+
+        return result
+    }, [])
+}
+
+{
+    // forEach
+    // 순회하면서 콜백 함수를 실행
+    const arr = [1, 2, 3]
+
+    arr.forEach((item) => console.log(item))
+    // 1, 2, 3
+
+    // forEach 사용시 주의점
+    // 반환값이 없다 (undefined)    
+    // 실행되는 순간 에러나 프로세스를 종료하지 않는 이상 멈출 수 없다
+    // break, return을 사용해도 멈추지 않음 (함수의 return 이 아닌 콜백의 return으로 취급)
+    function run() {
+        const arr2 = [1, 2, 3]
+        arr.forEach((item) => {
+            console.log(item)
+
+            if(item === 1){
+                console.log('finished!')
+                return
+            }
+        })
+    }
+
+    run()
+    // 1
+    // finished!
+    // 2 
+    // 3
 }

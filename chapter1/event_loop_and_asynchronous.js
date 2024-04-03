@@ -155,6 +155,7 @@
             const macro_micro = document.getElementById('macro_micro')
 
             {/* 동기 코드로 버튼에 1부터 렌더링 */}
+            {/* for문을 모두 순회 후 렌더링 (숫자가 한번에 나타난다) */}
             sync.addEventListener('click', function() {
                 for(let i=0; i<=10000; i++){
                     sync.innerHTML = i
@@ -162,6 +163,7 @@
             })
 
             {/* setTimeout으로 태스크 큐에 작업을 넣어서 1부터 렌더링 */}
+            {/* 모든 setTimeout 콜백에 큐에 들어가기 전까지 잠깐의 대기시간을 가지다가 1부터 순차적으로 렌더링 */}
             macrotask.addEventListener('click', function(){
                 for(let i=0; i<=10000; i++){
                     setTimeout(() => {
@@ -171,6 +173,7 @@
             })
 
             {/* queueMicrotask로 마이크로 태스크 큐에 넣어서 1부터 렌더링 */}
+            {/* for문 모두 순회 후 렌더링 */}
             microtask.addEventListener('click', function(){
                 for(let i=0; i<=10000; i++){
                     queueMicrotask(() => {
@@ -179,6 +182,8 @@
                 }
             })
 
+            {/* 동기 코드와 마이크로 태스크 큐만 한번에 렌더링 */}
+            {/* 태스크 큐만 순차 렌더링 */}
             macro_micro.addEventListener('click', function(){
                 for(let i=0; i<=10000; i++){
                     sync.innerHTML = i
@@ -194,4 +199,25 @@
             })
         </script>
     </html>
+}
+
+{
+    // 리페인트 전에 콜백 함수 호출을 가능하게 하는 requestAnimationFrame으로도 확인 가능
+    // a, c, d, b 순으로 출력
+    console.log('a')
+
+    setTimeout(() => {
+        console.log('b')
+    }, 0)
+
+    Promise.resolve().then(() => {
+        console.log('c')
+    })
+
+    window.requestAnimationFrame(() => {
+        console.log('d')
+    })
+
+    // 동기 코는 물론이고 마이크로 태스크 또한 마찬가지로 렌더링에 영향을 미칠 수 있다
+    // 따라서 특정 렌더링이 자바스크립트 내 무거운 작업과 연관이 있다면 이를 어떤 식으로 분리해서 최적화를 할지 고민해야 한다
 }

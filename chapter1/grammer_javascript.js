@@ -59,3 +59,155 @@
     // first4 1
     // rest [2, 3, 4, 5]
 }
+
+{
+    // 배열 구조 분해 할당 트랜스파일
+    const array = [1, 2, 3, 4, 5]
+    const [first, second, third, ...arrayRest] = array
+
+    //트랜스파일된 결과
+    var array = [1, 2, 3, 4, 5]
+    var first = array[0],
+        second = array[1],
+        third = array[2],
+        arrayRest = array.slice(3)       
+}
+
+{
+    // 객체 구조 분해 할당
+    // 객체에서 값을 꺼내온 뒤 할당
+    // 객체 내부 이름으로 꺼내온다
+    const object = {
+        a: 1,
+        b: 2,
+        c: 3,
+        d: 4,
+        e: 5
+    }
+
+    const {a, b, c, ...objectRest} = object
+    // a 1
+    // b 2 
+    // c 3
+    // objectRest = {d: 4, e: 5}
+
+    // 새로운 이름으로 다시 할당 가능
+    const object2 = {
+        a: 1,
+        b: 2,
+    }
+
+    const {a: first, b: second} = object
+    // first 1
+    // second 2
+
+    // 기본값 할당도 가능
+    const object3 = {
+        a: 1,
+        b: 1
+    }
+
+    const {a3 = 10, b3 = 10, c3 = 10} = object3
+    // a3 1
+    // b3 1
+    // c3 10
+
+    // 해당 방식은 리액트 컴포넌트인 props 에서 값을 바로 꺼내올 때 매우 자주 쓰는 방식
+    function SampleComponent({a, b}){
+        return a + b
+    }
+
+    SampleComponent({a: 3, b: 5}) //8
+
+    // 단순히 값으로 꺼내오는 것뿐만 아니라 변수에 있는 값으로 꺼내오는 계산된 속성 이름 방식도 가능
+    const key = 'a'
+    const object4 = {
+        a: 1,
+        b: 1,
+    }
+
+    // :a 와 같은 변수 네이밍이 필요
+    // 계산된 이름인 [key]로 값을 꺼내기만 했을 뿐 어느 변수명으로 할당해야 할지 알 수 없기 떄문
+    const { [key]: a4 } = object4
+
+    // a4 = 1
+
+    // 전개 연산자를 사용하면 나머지 값을 모두 가져올 수 있다
+    // 전개 연산자는 앞에 올 수 없다
+    const object5 = {
+        a: 1,
+        b: 1,
+        c: 1,
+        d: 1,
+        e: 1
+    }
+
+    const {a5, b5, ...rest} = object5
+    // rest {c4: 1, d4: 1, e4: 1}
+}
+
+{
+    // 객체 분해 할당 코드 트랜스파일
+
+    //트랜스파일 전
+    const object = {
+        a: 1,
+        b: 1,
+        c: 1,
+        d: 1,
+        e: 1
+    }
+
+    const {a, b, ...rest} = object
+
+    // 트랜스파일 결과
+    // 번들링 크기가 상대적으로 커지기 때문에 개발 환경이 ES5를 고려해야 하고 객체 구조 분해 할당을 자주 쓰지 않는다면 꼭 써야 하는지 검토 필요
+    // 외부 라이브러리 (lodash.omit, rambda.omit) 고려
+    function _objectWithoutProperties(source, excluded){
+        if(source == null) return {}
+
+        var target = _objectWithoutPropertiesLoose(source, excluded)
+        var key, i
+
+        if(Object.getOwnPropertySymbols) {
+            var sourceSymbolKeys = Object.getOwnPropertySymbols(source)
+
+            for(i=0; i<sourceSymbolKeys.length; i++){
+                key = sourceSymbolKeys[i]
+
+                if(excluded.indexOf(key) >= 0) continue
+                if(!Object.prototype.propertyIsEnumerable.call(source, key)) continue
+                target[key] = source[key]
+            }
+        }
+
+        return target
+    }
+
+    function _objectWithoutPropertiesLoose(source, excluded){
+        if(source == null) return {}
+        var target = {}
+        var sourceKeys = Object.keys(source)
+        var key, i
+
+        for(i=0; i<sourceKeys.length; i++){
+            key = sourceKeys[i];
+            if(excluded.indexOf(key) >= 0) continue
+            target[key] = source[key]
+        }
+
+        return target
+    }
+
+    var object = {
+        a: 1,
+        b: 1,
+        c: 1,
+        d: 1,
+        e: 1
+    }
+
+    var a = object.a,
+        b = object.b,
+        rest = _objectWithoutProperties(object, ['a', 'b'])
+}

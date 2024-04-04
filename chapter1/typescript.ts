@@ -231,3 +231,181 @@
     a //string
     b //boolean
 }
+
+{
+    // 인덱스 시그니처
+    // 객체의 키를 정의하는 방식
+    // 동적인 객체 정의시 유용
+    // 키의 범위가 넓으면 undefined를 반환할 수도 있음
+    // 객체의 키가 동적으로 선언되는 경우를 최대한 지양해야함
+    // 객체의 타입도 필요에 따라 좁혀야 한다
+
+    type Hello = {
+        // 인덱스 시그니처
+        [key: string]: string
+    }
+
+    const hello: Hello = {
+        hello: 'hello',
+        hi: 'hi',
+    }
+
+    hello['hi'] //hi
+    hello['안녕'] //undefined
+}
+
+{
+    // 인덱스 시크니처 타입 좁히기 예제
+    // record를 사용
+    // Record<키, 값> = 객체의 타입에 각각 원하는 키와 값을 넣을 수 있다
+
+    type Hello = Record<'hello' | 'hi', string>
+
+    const hello: Hello = {
+        hello: 'hello',
+        hi: 'hi'
+    }
+
+    // 타입을 사용한 인덱스 시그니처
+    // 객체의 키가 hello, hi 둘 중 하나여야 하며 값의 타입은 string인 객체
+    type Hello2 = {[key in 'hello' | 'hi']: string}
+
+    const hello2: Hello2 = {
+        hello: 'hello',
+        hi: 'hi'
+    }
+
+    // 인덱스 시그니처 사용시 에러
+    Object.keys(hello).map((key) => {
+        //error
+        const value = hello[key]
+        return value
+    })
+
+    // string[]
+    // key의 타입이 hello, hi라서 string으로 접근 불가
+    const result = Object.keys(hello);
+
+    // Object.keys(hello)를 as로 타입을 단언하는 방법
+    (Object.keys(hello) as Array<keyof Hello>).map((key) => {
+        const value = hello[key]
+        return value
+    })
+
+    // 타입 가드 함수를 만드는 방법
+    // 객체를 인수로 전달하면 키값을 뽑아 만든 배열에 타입을 as 키워드로 단언
+    function keysOf<T extends Object>(obj: T): Array<keyof T>{
+        return Array.from(Object.keys(obj)) as Array<keyof T>
+    }
+
+    keysOf(hello).map((key) => {
+        const value = hello[key]
+        return value
+    })
+
+    // 가져온 key를 단언하는 방법
+    // [] 안에서 뽑은 key의 타입을 Hello의 키 타입과 일치시킨다
+    Object.keys(hello).map((key) => {
+        const value = hello[key as keyof Hello]
+        return value
+    })
+}
+
+{
+    // stirng[]으로 반환하는 이유 
+    // 덕 타이핑(구조적 타이핑) 때문
+    // 타입스크립트는 모든 키가 들어올 수 있는 가능성이 열려 있는 객체의 키에 포괄적으로 대응하기 위해 stirng[]으로 타입 제공
+    type Car = {name: string}
+    type Truck = Car & {power: number}
+
+    function horn(car: Car){
+        console.log(`${car.name}이 경적을 울립니다! 빵빵`)
+    }
+
+    const truck: Truck = {
+        name: '비싼차',
+        power: 100,
+    }
+
+    // 정상 작동
+    // Car에 필요한 속성은 다 가지고 있기 떄문에 Car처럼 name을 가지고 있으므로 유효하다
+    horn(truck)
+}
+
+{
+    // 타입 스크립트 전환 가이드
+    //tsconfig.json 먼저 작성하기
+    
+    // {
+    //     "compilerOptions": {
+    //         .ts나 .js가 만들어진 결과를 넣어두는 폴더 tsc는 타입스크립트를 자바스크립트로 변환하는 명령
+    //         해당 명령어 사용시 outDir로 결과물이 넘어간다 
+    //         "outDir": "./dist",
+    //         .js파일을 허용할 것인지 여부
+    //         "allowJs": true,
+    //         결과물이 될 자바스크립트 버전 지정
+    //         "target": "es5"
+    //     },
+    //     트랜스파일할 자바스크립트와 타입스크립트 파일 지정
+    //     "include": ["./src/**/*"]
+    // }
+}
+
+{
+    // JsDoc과 @ts-check를 활용해 점진적으로 전환하기
+    // 파일 최상단에 //@ts-check 선언 
+    // JSDoc을 활용해 변수나 함수에 타입 제공 = 타입스크립트 컴파일러가 자바스크립트 파일의 타입을 확인
+    // 손이 많이 가기 때문에 기존 프로젝트에서 JSDoc을 사용하거나 타입스크립트 전환이 어려울 때만 추천
+
+    // @ts-check
+    / **
+      * @type {string}
+      */
+    const str = true
+
+    / **
+      * @param {number} a
+      * @param {number} b
+      * @return {number}
+      */
+    function sum(a, b){
+        return a + b
+    }
+
+    / **
+      * Function lacks ending return statement and return type does not include 'undefined'
+      * @return {JSX.Element}
+      */
+    export function SampleComponent(){
+        // Argument of type 'string' is not assignable to parameter of type 'number' .ts
+        const result1 = sum(a, b)
+        // Argument of type 'string' is not assignable to parameter of type 'number' .ts
+        const result2 = sum(10, str)
+
+        if(result1 && result2){
+            return (
+                <>
+                    {result1}{result2}
+                </>
+            )
+        }
+    }   
+}
+
+{
+    // 타입 기반 라이브러리 사용을 위해 @types 모듈 설치
+    // 자바스크립트 기반으로 작성된 라이브러리를 설치해서 사용하고 있다면 @types라 불리는 DefinitelyTyped 설치
+    // 타입스크립트로 작성되지 않은 코드에 대한 타입을 제공하는 라이브러리
+    // 리액트를 타입스크립트에서 사용하기 위해서도 설치해야함
+    // 파일을 .ts로 전환 시 import에 Cannot find module 'loadash' or its corresponding type declarations라는 오류 메세지가 출력된다면 라이브러리를 설치해야 함
+}
+
+{
+    // 파일 단위로 조금씩 전환
+    // 상수나 유틸과 같은 별도 의존성을 가지지 않은 파일 수정
+    // 상수의 경우 string, number와 같이 원시값 대신 가능한 한 타입을 좁힘
+    // js-to-ts-converter와 같은 전환 도구 라이브러리의 사용은 비추천 = 코드 이해도
+    
+}
+
+

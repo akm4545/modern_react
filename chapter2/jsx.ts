@@ -75,5 +75,111 @@
 }
 
 {
-    // JSXNamespacedName: JSXIdenti
+    // JSXNamespacedName: JSXIdentifier: JSXIdentifier
+    // :을 통해 서로 다른 식별자를 이어주는것도 하나의 식별자로 취급 
+    // 두 개 이상은 올바른 식별자로 취급하지 않음
+    function valid(){
+        return <foo:bar></foo:bar>
+    }
+
+    //불가능
+    function invalid(){
+        return <foo:bar:baz></foo:bar:baz>
+    }
+}
+
+{
+    // JSXmemberExpression: JSXIdentifier.JSXIdentifier
+    // .을 통해 서도 다른 식별자를 이어 하나의 식별자로 취급
+    // 여러개도 가능
+    // JSXNamespacedName과 이어서 사용은 불가능
+    function valid1(){
+        return <foo.bar></foo.bar>
+    }
+
+    function valid2(){
+        return <foo.bar.baz></foo.bar.baz>
+    }
+
+    //불가능
+    function invalid(){
+        return <foo:bar.baz></foo:bar.baz>
+    }
+}
+
+{
+    // JSXAttributes
+    // JSXElement에 부여할 수 있는 속성
+
+    // JSXSpreadAttributes: 자바스크립트 전개 연산자와 동일
+    // {...AssignmentExpresstion}: AssignmentExpresstion = 단순 자바 객체만이 아니라 조건문 표현식, 화살표 함수 등 모든 표현식이 존재할 수 있다
+}
+
+{
+    // JSXAttribute: 속성을 나타내는 키와 값으로 짝을 이루어서 표현 
+    // 키는 JSXAttributeName, 값은 JSXAttributeValue로 불림
+    // 속성의 키값(JSXAttributeName) JSXElementName에서 언급했던 JSXIdentifier와 JSXNamespacedName이 가능 (:)
+    function valid1(){
+        return <foo.bar foo:bar="baz"></foo.bar>
+    }
+}
+
+{
+    // JSXAttributeValue : 속성의 키에 할당할 수 있는 값
+    // 다음을 만족해야 함
+    // 큰따옴표로 구성된 문자열
+    // 작은따옴표로 구성된 문자열
+    // {AssignmentExpression}: 자바스크립트에서 값을 할당할 때 쓰는 표현식
+    // JSXElement: 값으로 다른 JSX 요소
+    function Child({attribute}){
+        return <div>{attribute}</div>
+    }
+
+    // 일반적으로 <Child attribute={<div>hello</div>} /> 로 기입
+    // 문법적 오류가 아닌 prettier의 규칙 (읽기 쉽게 하기 위해)
+    export default function App(){
+        return (
+            <div>
+                <Child attribute=<div>hello</div> />
+            </div>
+        )
+    }
+
+    // JSXFragment: 값으로 별도 속성을 갖지 않는 형태의 JSX요소 (<></>)
+}
+
+{
+    // JSXChildren
+    // JSXElement의 자식 값 (JSX는 트리 구조이므로 부모 자식 관계가 가능)
+}
+
+{
+    // JSXChild: JSXChildren 기본 단위
+    // JSXChildren은 JSXChildren를 0개 이상 가질 수 있다
+    // JSXText: {, <, >,}을 제외한 문자열 이는 다른 JSX문법과 혼동을 줄 수 있기 때문에 이 문자를 표현하고 싶다면 문자열로 표현
+    function valid(){
+        return <>{'{} <>'}</>
+    } 
+    // JSXElement: 값으로 다른 JSX 요소가 들어갈 수 있다
+    // JSXFragment: 값으로 빈 JSX 요소인 <></>가 들어갈 수 있다
+    // {JSXChildExpression (optional)}: JSXChildExpression = AssignmentExpression을 의미
+    // 다음 코드도 올바른 JSX표현식으로 볼 수 있다
+    // foo 문자 출력
+    export default function App(){
+        return <>{(() => 'foo')()}</>
+    }
+}
+
+{
+    // JSXStrings
+    // HTML에서 사용 가능한 문자열은 모두 JSXStrings에서도 가능
+    // HTML의 내용을 쉽게 JSX로 가져올 수 있도록 의도적인 설계
+    // 이스케이프 문자를 제약 없이 사용 가능
+    <button>\<button>
+
+    // error
+    let escape1 = "\"
+
+    //ok
+    let escape2 = "\\"
 }

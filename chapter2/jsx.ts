@@ -183,3 +183,158 @@
     //ok
     let escape2 = "\\"
 }
+
+{
+    // JSX 예제
+
+    // 하나의 요소로 구성된 가장 단순한 형태
+    const ComponentA = <A>안녕하세요.</A>
+
+    // 자식이 없이 SelfClosingTag로 닫혀 있는 형태
+    const ComponentB = <A />
+
+    // 옵션을 {}와 전개연산자로 넣는 형태
+    const ComponentC = <A {...{required: true}} />
+
+    // 속성만 넣는 형태
+    const ComponentD = <A required />
+
+    // 속성과 속성값을 넣는 형태
+    const ComponentE = <A required={false} />
+
+    const ComponentF = (
+        <A>
+            // 문자열은 큰, 작은따옴표 모두 가능
+            <B text="리액트" />
+        </A>
+    )
+
+    const ComponentG = (
+        <A>
+            // 옵션의 값으로 JSXElement를 넣는 것 또한 올바른 문법
+            <B optionalChildren={<>안녕하세요.</>} />
+        </A>
+    )
+
+    const ComponentH = (
+        <A>
+            // 여러개의 자식도 포함 가능
+            안녕하세요
+            <B text="리액트" />
+        </A>
+    )
+}
+
+{
+    // 이 외에 리액트 내에서는 유효하지 않거나 사용되는 경우가 거의 없는 문법도 JSX 문법 자체로는 유효
+    function ComponentA(){
+        return <A.B></A.B>
+    }
+
+    function ComponentB(){
+        return <A.B.C></A.B.C>
+    }
+
+    function ComponentC(){
+        return <A:B:C></A:B:C>
+    }
+
+    function ComponentD() {
+        return <$></$>
+    }
+
+    function ComponentE(){
+        return <_></_>
+    }
+}
+
+{
+    // JSX -> 자바스크립트 구문 변화 = @babel/plugin-transform-react-jsx 플러그인
+
+    // 예제
+    const ComponentA = <A required={true}>Hello World</A>
+
+    const ComponentB = <>Hello World</>
+
+    const ComponentC = (
+        <div>
+            <span>hello world</span>
+        </div>
+    )
+
+    // 변환 결과
+    'use strict'
+
+    var ComponentA = React.createElement(
+        A,
+        {
+            required: true,
+        },
+        'Hello World',
+    )
+
+    var ComponentB = React.createElement(React.Fragment, null, 'Hello World')
+
+    var ComponentC = React.createElement(
+        'div',
+        null,
+        React.createElement('span', null, 'hello world')
+    )
+
+    // 리액트 17, 바벨 7.9.0 이후 버전에서 추가된 자동 런타임으로 트랜스파일
+    'use strict'
+
+    var _jsxRuntime = require('custom-jsx-library/jsx-runtime')
+
+    var ComponentA = (0, _jsxRuntime.jsx)(A, {
+        required: true,
+        children: 'Hello World',
+    })
+
+    var ComponentB = (0, _jsxRuntime.jsx)(_jsxRuntime.Fragment, {
+        children: 'Hello World',
+    })
+
+    var ComponentC = (0, _jsxRuntime.jsx)('div', {
+        children: (0, _jsxRuntime.jsx)('span', {
+            children: 'hello world',
+        }),
+    })
+}
+
+{
+    // @babel/plugin-transform-react-jsx 설정
+    import * as Babel from '@babel/standalone'
+
+    Babel.registerPlugin(
+        '@babel/plugin-transform-react-jsx',
+        require('@babel/plugin-transform-react-jsx')
+    )
+
+    const BABEL_CONFIG = {
+        presets: [],
+        plugins: [
+            [
+                '@babel/plugin-transform-react-jsx',
+                {
+                    throwIfNamespace: false,
+                    reuntime: 'automatic',
+                    importSource: 'custom-jsx-library',
+                },
+            ],
+        ],
+    }
+
+    const SOURCE_CODE = `const ComponentA = <A>안녕하세요.</A>`
+
+    //code 변수에 트랜스파일된 결과가 담긴다
+    const {code} = Bable.transform(SOURCE_CODE, BABEL_CONFIG)
+
+    // 두 결과물의 공통점
+    // JSXElement를 첫 번째 인수로 선언해 요소 정의
+    // 옵셔널인 JSXChildren, JSXAttributes, JSXStrings는 이후 인수로 넘겨주어 처리
+
+    // JSXElement 렌더링 시 굳이 요소 전체를 감싸지 않아도 처리 가능
+    // JSXElement만 다르고 JSXAttributes, JSXChildren이 완전히 동일한 상활에서 중복 코드를 최소화 할 수 있다
+    // 예제
+}

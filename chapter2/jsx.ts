@@ -337,4 +337,42 @@
     // JSXElement 렌더링 시 굳이 요소 전체를 감싸지 않아도 처리 가능
     // JSXElement만 다르고 JSXAttributes, JSXChildren이 완전히 동일한 상활에서 중복 코드를 최소화 할 수 있다
     // 예제
+    import {createElement, PropsWithChildren} from 'react'
+
+    // props 여부에 따라 chidren 요소만 달라지는 경우
+    // 굳이 번거롭게 전체 내용을 삼항을 처리할 필요가 없다
+    // 이 경우 불필요한 코드 중복이 일어난다
+
+    // isHeading, children 변수를 받아 PropsWithChildren타입의 컴포넌트를 리턴
+    function TextOrHeading({
+        isHeading,
+        children,
+    }: PropsWithChildren<{isHeading: boolean}>){
+        return isHeading ? (
+            <h1 className="text">{children}</h1>
+        ) : (
+            <span className="text">{children></span>
+        )
+    }
+
+    // JSX가 변환되는 특성을 활용하여 간결하게 처리
+    // JSX 반환값이 결국 React.createElement이므로 이린 식으로 리팩터링 가능
+    import {createElement} from 'react'
+
+    function TextOrHeading2({
+        isHeading,
+        children
+    }: PropsWithChildren<{isHeading: boolean}>) {
+        return createElement(
+            isHeading ? 'hi' : 'span',
+            {className: 'text'},
+            children
+        )
+    }
+}
+
+{
+    // JSX 구문 중 리액트에서 사용하지 않는 것
+    // JSXNamespaceName
+    // JSXMemeberExpression
 }

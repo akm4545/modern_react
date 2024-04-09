@@ -81,7 +81,7 @@
     // 리액트는 이러한 작업 단위를 하나씩 처리하고 finishedWork()라는 작업으로 마무리한다
     // 이 작업을 커밋해 실제 브라우저 DOM에 가시적인 변경 사항을 만들어 낸다
     // 아래 두 단계로 작업
-    // 1. 렌더 단계에서 리액트는 사용자에게 노출되지 않는 모든 비동기 작업을 수행 이 단계에서 앞서 언급한 파버의 작업
+    // 1. 렌더 단계에서 리액트는 사용자에게 노출되지 않는 모든 비동기 작업을 수행 이 단계에서 앞서 언급한 파이버의 작업
     // 우선순위를 지정하거나 중지시키거나 버리는 등의 작업 발생
     // 2. 커밋 단계에서 앞서 언급한 것처럼 DOM에 실제 변경 사항을 반영하기 위한 작업, commitWork()가 실행되는데, 이 과정은 앞서와 다르게 동기식으로
     // 일어나고 중단될 수도 없다
@@ -89,6 +89,9 @@
 
 {
     // 파이버가 실제 리액트 코드에서 어떻게 구현되어 있는지
+    // 단순한 자바스크립트 객체로 구성돼 있다
+    // 리액트 요소는 렌더링이 발생할 때마다 새롭게 생성되지만 파이버는 가급적이면 재사용된다
+    // 파이버는 컴포넌트가 최초로 마운트되는 시점에 생성되어 이후에는 가급적이면 재사용 
     function FiberNode(tag, pendingProps, key, mode){
         // Instance
         this.tag = tag
@@ -124,5 +127,123 @@
         this.alternate = null
 
         // 이하 프로파일러, __DEV__ 코드는 생략
-    }   
+    }
+}
+
+{
+    // 리액트에 작성돼 있는 파이버를 생성하는 함수들
+    var createFiber = function(tag, pendingProps, key, mode) {
+        return new FiberNode(tag, pendingProps, key, mode)
+    }
+
+    //생략 ...
+    function createFiberFromElement(element, mode, lanes){
+        var owner = null
+
+        {
+            owner = element._owner
+        }
+
+        var type = element.type
+        var key = element.key
+        var pendingProps = element.props
+        var fiber = createFiberFromTypeAndProps(
+            type,
+            key,
+            pendingProps,
+            owner,
+            mode,
+            lanes,
+        )
+
+        {
+            fiber._debugSource = element._debugSource
+            fiber._debugOwner = element._owner
+        }
+
+        return fiber
+    }
+
+    function createFiberFromFragment(elements, mode, lanes, key){
+        var fiber = createFiber(Fragment, elements, key, mode){
+            fiber.lanes = lanes
+            return fiber
+        }
+    }
+
+    // 주요 속성
+    // tag: 파이버는 element에 하나가 생성되는 1:1관계 여기서 1:1로 매칭된 정보를 가지고 있는 것이 tag
+    // 1:1로 연결되는 것은 리액트 컴포넌트, HTML의 DOM 노드, 혹은 다른 어떤 것일 수도 있다
+
+    // 파이버 태그가 가질 수 있는 값
+    var FunctionComponent = 0
+    var ClassComponent = 1
+    var IndeterminateCompnent = 2
+    var HostRoot = 3
+    var HostPortal = 4
+    // div 같은 요소를 의미
+    var HostComponent = 5
+    var HostText = 6
+    var Fragment = 7
+    var Mode = 8
+    var ContextConsumer = 9
+    var ContextProvider = 10
+    var ForwardRef = 11
+    var Profiler = 12
+    var SuspenseComponent = 13
+    var MemoComponent = 14
+    var SimpleMemoComponent = 15
+    var LazyComponent = 16
+    var IncompleteClassComponent = 17
+    var DehydratedFragment = 18
+    var SuspenseListCompnent = 19
+    var ScopeComponent = 21
+    var OffscreenComponent = 22
+    var LegacyHiddenComponent = 23
+    var CacheComponent = 24
+    var TracingMarkerComponent = 25
+
+
+    // stateNode: 파이버 자체에 대한 참조 정보를 가지고 있고 이 참조를 바탕으로 리액트 파이버와 관련된 상태에 접근
+    // child, sibling, return: 파이버 간의 관계 개념을 나타내는 속성
+    // 리액트 컴포넌트 트리가 형성되는 것과 동일하게 파이버도 트리 형식을 가짐
+    // 트리 형식을 구성하는데 필요한 정보가 해당 속성 내부에 정의
+    // children이 없고 하나의 child만 존재
+}
+
+{
+    <ul>
+        <li>하나</li>
+        <li>둘</li>
+        <li>셋</li>
+    </ul>
+
+    // 파이버의 자식은 항상 첫 번째 자식의 참조로 구성
+    // <ul/> 파이버의 첫번째 자식은 <li/>파이버
+    // 나머지 두 개의 <li/> 파이버는 형제 (sibling)으로 구성 
+    // 마지막 return은 부모 파이버를 의미 
+    // 여기서 모든 <li/>파이버는 <ul/>파이버를 return으로 갖게 됨
+
+    // 관계도를 자바스크립트 코드로 표현
+    const l3 = {
+        return: ul,
+        index: 2,
+    }
+
+    const l2 = {
+        sibling: l3,
+        return: ul,
+        index: 1,
+    }
+
+    const l1 = {
+        sibling: l2,
+        return: ul,
+        index: 0
+    }
+
+    const ul = {
+        // ...
+        child: l1,
+    }
 }

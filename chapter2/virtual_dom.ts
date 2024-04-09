@@ -61,3 +61,68 @@
     // 브라우저와 개발자의 부담이 적어진다
     // 가상 DOM은 기존 DOM 보다 무조건 빠른건 아니다 다만 대부분의 상황에서 왠만한 애플리케이션을 만들 수 있을 정도로 충분히 빠르다
 }
+
+{
+    // 가상 DOM과 렌더링 최적화를 가능하게 해주는 것이 리액트 파이버(React Fiber)디
+    // 리액트 파이버
+    // 리액트에서 관리하는 평범한 자바스크립트 객체
+    // 파이버는 파이버 재조정자가 관리
+    // 가상 DOM과 실제 DOM을 비교해 변경사항 수집
+    // 둘 사이에 차이가 있으면 변경에 관련된 정보를 가지고 있는 파이버를 기준으로 화면에 렌더링을 요청 
+    // 재조정 = 리액트에서 어떤 부분을 새롭게 렌더링 가상 DOM과 실제 DOM을 비교하는 작업*알고리즘)
+
+    // 목표
+    // 리액트 웹 애플리케이션에서 발생하는 애니메이션, 레이아웃, 사용자 인터렉션에 올바른 결과물을 만드는 반응성 문제를 해결
+    // 작업을 작은 단위로 분할하고 쪼갠 다음, 우선순위를 매긴다
+    // 이러한 작업을 일시 중지하고 나중에 다시 시작
+    // 이전에 했던 작업을 다시 재사용하거나 필요하지 않은 경우에는 폐기
+    // 이러한 작업이 비동기로 일어난다
+    // 파이버는 하나의 작업 단위로 구성돼 있다 
+    // 리액트는 이러한 작업 단위를 하나씩 처리하고 finishedWork()라는 작업으로 마무리한다
+    // 이 작업을 커밋해 실제 브라우저 DOM에 가시적인 변경 사항을 만들어 낸다
+    // 아래 두 단계로 작업
+    // 1. 렌더 단계에서 리액트는 사용자에게 노출되지 않는 모든 비동기 작업을 수행 이 단계에서 앞서 언급한 파버의 작업
+    // 우선순위를 지정하거나 중지시키거나 버리는 등의 작업 발생
+    // 2. 커밋 단계에서 앞서 언급한 것처럼 DOM에 실제 변경 사항을 반영하기 위한 작업, commitWork()가 실행되는데, 이 과정은 앞서와 다르게 동기식으로
+    // 일어나고 중단될 수도 없다
+}
+
+{
+    // 파이버가 실제 리액트 코드에서 어떻게 구현되어 있는지
+    function FiberNode(tag, pendingProps, key, mode){
+        // Instance
+        this.tag = tag
+        this.key = key
+        this.elementType = null
+        this.type = null
+        this.stateNode = null
+
+        //fiber
+        this.return = null
+        this.child = null
+        this.sibling = null
+        this.index = 0
+        this.ref = null
+        this.refCleanup = null
+
+        this.pendingProps = pendingProps
+        this.memoizedProps = null
+        this.updateQueue = null
+        this.memoizedState = null
+        this.dependencies = null
+        
+        this.mode = mode
+
+        // Effects
+        this.flags = NoFlags
+        this.subtreeFlags = NoFlags
+        this.deletions = null
+
+        this.lanes = NoLanes
+        this.childLanes = NoLanes
+
+        this.alternate = null
+
+        // 이하 프로파일러, __DEV__ 코드는 생략
+    }   
+}

@@ -246,4 +246,33 @@
         // ...
         child: l1,
     }
+
+    // index: 여러 형제들 사이에서 자신의 위치가 몇 번째인지 숫자로 표현
+    // pendingProps: 아직 작업을 미처 처리하지 못한 props
+    // memoizedProps: pendingProps를 기준으로 렌더링이 완료된 이후에 pendingProps를 memoizedProps로 저장해 관리
+    // updateQueue: 상태 업데이트, 콜백 함수, DOM 업데이트 등 필요한 작업을 담아두는 큐 
+    // 해당 큐는 다음과 같은 구조
+    type UpdateQueue = {
+        first: Update | null
+        last: Update | null
+        hasForceUpdate: boolean
+        callbackList: null | Array<Callback> //setState로 넘긴 콜백 목록
+    }
+
+    // memoizedState: 함수 컴포넌트의 훅 목록이 저장 여기는 단순히 useState뿐만 아니라 모든 훅 리스트가 저장
+    // alternate: 리액트 파이버 트리와 이어질 개념 리액트의 트리는 두 개인데 alternate는 반대편 트리 파이버를 가리킨다
+
+    // 파이버는 state가 변경되거나 생명주기 메서드가 실행되거나 DOM의 변경이 필요한 시점 등에 실행
+    // 바로 처리하기도 하고 스케줄링 하기도 한다
+    // 작은 단위로 나눠서 처리, 우선순위가 높은 작업을 빠르게 처리 등 유연하게 처리
+    // 리액트의 핵심 원칙은 UI를 문자열, 숫자, 배열 같은 값으로 관리
+    // 변수에 이런 UI 관련 값 보관 리액트의 자바스크립트 코드 흐름에 따라 이를 관리, 표현하는것이 리액트
+}
+
+{
+    // 리액트 파이버 트리
+    // 리액트 내부에 두 개가 존재
+    // 현재 모습을 담은 파이버 트리, 작업 중인 상태를 나타내는 workInProgress 트리
+    // 리액트 파이버의 작업이 끝나면 리액트는 단순히 포인터만 변경해 workInProgress 트리를 현재 트리로 바꾸는데 이를 더블 버퍼링이라고 하낟
+
 }

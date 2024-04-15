@@ -561,5 +561,216 @@
 
     // 클래스는 함수에 비해 상대적으로 어렵다: 대부분의 언어와 다르게 작동하는 this를 비롯한 자바스크립트의 작동 방식은 클래스 컴포넌트를 처음 접하는 사람
     // 자바스크립트를 조금 해본 사람도 모두 혼란에 빠지게 할 수 있다
+
+    // 코드 크기를 최적화하기 어렵다
+    import React from 'react'
+
+    interface State {
+        count: number
+    }
+
+    type Props = Record<string, never>
+
+    export class ReactPureComponent extends React.PureComponent<Props, State> {
+        private constructor(props: Props) {
+            super(props)
+
+            this.state = {
+                count: 1,
+            }
+        }
+
+        private handleClick = () => {
+            console.log('handleClick!') 
+
+            this.setState({count: 1})
+        }
+
+        // 미사용
+        private handleChange = () => {
+            console.log('handleChanged!')
+        }
+
+        public render(){
+            return (
+                <h1>
+                    ReactPureComponent: {this.state.count}{' '}
+                    <button onClick={this.handleClick}>+</button>
+                </h1>
+            )
+        }
+    }
+
+    // 빌드 결과
+    // handleChange와 handleClick의 이름이 최소화 되지 않았고 사용하지 않는 메서드인 handleChange도 트리 쉐이킹이 되지 않고 포함
+    // 최적화 하기 불리한 조건
+    function u(e){
+        var n
+
+        return (
+            (function (e, n) {
+                if(!(e instanceof n))
+                    throw new TypeError('Cannot call a class as a function')
+            })(this, u),
+            ((n = o.call(this, e)).handleClick = function() {
+                console.log('handleClick!'),
+                    n.setState({
+                        count: 1,
+                    })
+            }),
+            (n.handleChange = function () {
+                console.log('handleChanged!')
+            }),
+            (n.state = {
+                count: 1,
+            }),
+            n
+        )
+    }
+    // ...
+
+    // 핫 리로딩에 불리: 핫 리로딩 = 코드에 변경 사항이 발생했을 때 앱을 다시 시작하지 않고서도 해당 변경된 코드만 업데이트해 
+    // 변경 사항을 빠르게 적용하는 기법
+    
+    import {PureComponent, useState} from 'react'
+
+    function FunctionalComponent() {
+        const [count, setCount] = useState(0)
+
+        function handleClick(){
+            setCount((prev) => prev + 1)
+        }
+
+        return (
+            <>
+                <button onClick={handleClick}>{count} + </button>
+            </>
+        )
+    }
+
+    class ClassComponent extends PureComponent<{}, {count: number}> {
+        constructor(props: {}) {
+            super(props)
+
+            this.state = {
+                count: 0,
+            }
+        }
+
+        handleClick = () => {
+            this.setState((prev) => ({count: prev.count + 1}))
+        }
+
+        render() {
+            return <button onClick={this.handleClick}>{this.state.count} + </button>
+        }
+    }
+
+    export default function App(){
+        return (
+            <>
+                <FunctionalComponent />
+                <ClassComponent />
+            </>
+        )
+    }
+
+    // 함수 컴포넌트는 핫 리로딩이 일어난 뒤에도 변경된 상태값이 유지
+    // 클래스 컴포넌트는 핫 리로딩이 일어나면 기본값을 ㅗ돌아감
+    // 클래스 컴포넌트는 최초 렌더링 시에 instance를 생성하고 그 내부에서 state값을 관리
+    // render를 반영하려면 해당 인스턴스를 새로 생성하는 방법밖에 없는게 그러면 값은 초기화된다
+    // 함수 컴포넌트는 state를 함수가 아닌 클로저에 저장해 두므로 다시 실행해도 state를 잃지 않는다
+}
+
+{
+    // 함수 컴포넌트 
+    // 클래스 컴포넌트와 비교했을 때 확실히 여러모로 간결해졌다
+    // this 바인딩을 조심할 필요도 없고 state는 객체가 아닌 각각의 원시값으로 관리되어 훨씬 사용하기가 편해졌다
+    // 렌더링하는 코드인 return 에서도 굳이 this를 사용하지 않더라도 props와 state에 접근할 수 있게 도ㅒㅆ다
+    // 예제
+    import {useState} from 'react'
+
+    type SampleProps = {
+        required?: boolean
+        text: string
+    }
+
+    export function SampleComponent({required, text}: SampleProps) {
+        const [count, setCount] = useState<number>(0)
+        const [isLimited, setIsLimited] = useState<boolean>(false)
+
+        function handleClick(){
+            const newValue = count + 1
+            setCount(newValue)
+            setIsLimited(newValue >= 10)
+        }
+
+        return (
+            <h2>
+                Sample Component
+                <div>{required ? '필수' : '필수 아님'}</div>
+                <div>문자: {text}</div>
+                <div>count: {count}</div>
+                <button onClick={handleClick} disabled={isLimited}>
+                    증가
+                </button>
+            </h2>
+        )
+    }
+}
+
+{
+    // 함수 컴포넌트와 클래스 컴포넌트의 차이
+    // 클래스 컴포넌트의 생명주기 메서드가 함수 컴포넌트에서는 존재하지 않는다
+    // 함수 컴포넌트는 props를 받아 단순히 리액트 요소만 반환하는 함수인 반면 클래스 컴포넌트는 render 메서드가 있는 React.Component를 상속받아 
+    // 구현하는 자바스크립트 클래스이기 떄문 
+    // 생명주기 메서드는 React.Component에서 오는 것이기 때문에 클래스 컴포넌트가 아닌 이상 생명주기 메서드를 더는 사용할 수 없다
+    // 함수 컴포넌트는 useEffect 훅을 사용해 생명주기 메서드인 componentDidMount, componentDidUpdate, componentWillUnmount를 비슷하게 구현 가능
+    // 비슷할 뿐이지 똑같지는 않다 useEffect는 컴포넌트의 state를 활용해 동기적으로 부수 효과를 만드는 메커니즘이다
+
+    // 함수 컴포넌트는 렌더링된 값을 고정하고 클래스 컴포넌트는 그렇지 못하다
+    import React from 'react'
+
+    interface Props {
+        user: string
+    }
+
+    // 함수 컴포넌트로 구현한 setTimeout 예제
+    export function FunctionalComponent(props: Props){
+        const howMessage = () => {
+            alert('Hello ' + props.user)
+        }
+
+        const handleClick = () => {
+            setTimeout(showMessage, 3000)
+        }
+
+        return <button onClick={handleClick}>Follow</button>
+    }
+
+    // 클래스 컴포넌트로 구현한 setTimeout 예제
+    export class ClassComponent extends React.Component<Props, {}> {
+        private showMessage = () => {
+            alert('Hello ' + this.props.user)
+        }
+
+        private handleClick = () => {
+            setTimeout(this.showMessage, 3000)
+        }
+
+        public render() {
+            return <button onClick={this.handleClick}>Follow</button>
+        }
+    }
+
+    // setTimeout의 3초 사이에 props를 변경하면 
+    // ClassComponent의 경우 3초 뒤에 변경된 props를 기준으로 출력
+    // FunctionalComponent는 클릭했던 시점의 props 값을 기준으로 출력
+
+    // 클래스 컴포넌트는 props의 값을 항상 this로부터 가져온다
+    // 클래스 컴포넌트의 props는 외부에서 변경되지 않는 이상 불변 값이지만 this가 가리키는 객체는 변경 가능한 값이다
+    // 따라서 render 메서드를 비롯한 리액트의 생명주기 메서드가 변경된 값을 읽을 수 있다
+    
+    
 }
 

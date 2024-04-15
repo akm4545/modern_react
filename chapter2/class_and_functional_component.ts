@@ -93,18 +93,62 @@
     // 해당 컴포넌트를 호출하기 위해선 <SampleComponent text="안녕하세요" /> 와 같은 형식으로 선언
     // state: 컴포넌트 내부 관리 값 항상 객체여야 함 해당 값이 변할때마다 리렌더링 발생
     // 메서드: 렌더링 함수 내부에서 사용 보통 DOM 발생 이벤트와 함께 사용
+
     // 3가지 방식으로 만든다
     // 1. constructor에서 this 바인딩: 함수로 메서드를 만들면 this가 undefined로 나옴 (생성자가 아닌 일반 함수 호출 시 this = 전역 객체가 바인딩)
     // 생성된 함수에 bind를 활용해 강제로 this 바인딩을 해야함
+
+    // this 바인딩 예제
+    import {Component} from 'react'
+
+    // 빈 Props를 선언
+    type Props = Record<string, never>
+
+    interface State {
+        count: number
+    }
+
+    class SampleComponent2 extends Component<Props, State> {
+        private constructor(props: Props){
+            super(props)
+
+            this.state = {
+                count: 1,
+            }
+
+            // handleClick의 this를 현재 클래스로 바인딩
+            this.handleClick = this.handleClick.bind(this)
+        }
+
+        private handleClick(){
+            this.setState((prev) => ({count: prev.count + 1}))
+        }
+
+        public render(){
+            const {
+                state: {count},
+            } = this
+
+            return (
+                <div>
+                    <button onClick={this.handleClick}>증가</button>
+                    {count}
+                </div>
+            )
+        }
+    }
+
+    // 2. 화살표 함수 사용: 실행 시점이 아닌 작성 시점에 this가 상위 스코프로 결정
+    // 3. 렌더링 함수 내부에서 함수를 새롭게 만들어 전달하는 방법: 다음과 같이 메서드 내부에서 새롭게 함수를 만들어 전달
+    // 해당 방법은 렌더링시 매번 새로운 함수를 생성해서 할당하므로 최적화를 수행하기 매우 어려움 지양필요
+    <button onClick={() => this.handleClick()}>증가</button>
     
-
-
     // constructor 미사용 state 초기화 코드
     // ES2022에 추가된 클래스 필드 덕분에 가능한 문법
     // 초기화 과정을 거치지 않아도 클래스 내부에 필드를 선언할 수 있게 도와줌
     import {Component} from 'react'
 
-    class SampleComponent2 extends Component {
+    class SampleComponent3 extends Component {
         state = {
             count: 1,
         }
@@ -118,3 +162,4 @@
         }
     }
 }
+

@@ -328,3 +328,238 @@
     }
 }
 
+{
+    // getSnapShotBeforeUpdate()
+    // 최근에 도입된 생명주기 메서드 중 하나
+    // componentWillUpdate()를 대체할 수 있는 메서드
+    // DOM이 업데이트되기 직전에 호출
+    // 반환값은 componentDidUpdate로 전달
+    // DOM에 렌더링되기 전에 윈도우 크기를 조절하거나 스크롤 위치를 조정하는 등의 작업 처리에 유용
+    getSnapshotBeforeUpdate(prevProps: Props, prevState: State){
+        // props로 넘겨받은 배열의 길이가 이전보다 길면 현재 스크롤 높이 값을 반환
+        if(prevProps.list.length < this.props.list.length){
+            const list = this.listRef.current;
+
+            return list.scrollHeight - list.scrollTop;
+        }
+
+        return null;
+    }
+
+    // 3번째 인수인 snapshot은 클래스 제네릭의 3번째 인수로 넣어줄 수 있다
+    componentDidUpdate(prevProps: Props, prevState: State, snapshot: Snapshot){
+        // getSnapshotBeforeUpdate로 넘겨받은 값은 snapshot에서 접근 가능
+        // snapshot 값이 있다면 스크롤 위치를 재조정해 기존 아이템이 스크롤에서 밀리지 않도록 도와준다
+        if(snapshot !== null){
+            const list = this.listRef.current;
+            list.scrollTop = list.scrollHeight - snapshot;
+        }
+    }
+}
+
+{
+    // getDerivedStateFromError()
+    // 에러 상황에서 실행되는 메서드 
+    // 아직 리액트 훅으로 구현돼 있지 않기 떄문에 해당 메서드가 필요하다면 클래스 컴포넌트를 사용해야함
+    // 자식 컴포넌트에서 에러가 발생했을 때 호출되는 에러 메서드
+
+    // ErrorBoundary.tsx
+    import React, {PropsWithChildren} from 'react'
+
+    type Props = PropsWithChildren<{}>
+    type State = {hasError: boolean; errorMessage: string}
+
+    export default class ErrorBoundary extends React.Component<Props, State> {
+        constructor(props: Props){
+            super(props)
+
+            this.state = {
+                hasError: false,
+                errorMessage: '',
+            }
+        }
+
+        // static 메서드 
+        // error을 인수로 받음 (하위 컴포넌트에서 발생한 에러)
+        // 반드시 state값을 반환해야함
+        // 하위 컴포넌트에서 에러가 발생했을 경우에 어떻게 자식 리액트 컴포넌트를 렌더링할지 결정하는 용도이기 떄문
+        // 렌더링 과정에서 호출되기 때문에 에러에 따른 상태 state를 반환하는것 이외에 부수효과를 발생시키면 안됨
+        // console.error 포함
+        static getDerivedStateFromError(error: Error) {
+            return {
+                hasError: true,
+                errorMessage: error.toString()
+            }
+        }
+
+        render(){
+            // 에러가 발생했을 경우에 렌더링할 JSX
+            if(this.state.hasError){
+                return (
+                    <div>
+                        <h1>에러가 발생했습니다.</h1>
+                        <p>{this.state.errorMessage}</p>
+                    </div>
+                )
+            }
+
+            // 일반적인 상황의 JSX
+            return this.props.children
+        }
+    }
+
+    // ...
+
+    //App.tsx
+    function App(){
+        return (
+            <ErrorBoundary>
+                <Child />
+            </ErrorBoundary>
+        )
+    }
+
+    function Child(){
+        const [error, setError] = useState(false)
+
+        const handleClick = () => {
+            setError((prev) => !prev)
+        }
+
+        if(error){
+            throw new Error('Error has been occurred.')
+        }
+
+        return <button onClick={handleClick}>에러 발생</button>
+    }
+}
+
+{
+    // componentDidCatch
+    // 자식 컴포넌트에서 에러 발생 시 실행
+    // getDerivedStateFromError에서 에러를 잡고 state를 결정한 이후에 실행
+    // 첫 번째 인수로 error을 받고 두 번째 인수로 에러가 발생한 컴포넌트의 정보를 가지고 있는 info를 받는다
+    import React, {PropsWithChildren} from 'react'
+
+    type Props = PropsWithChildren<{}>
+    type State = {hasError: boolean; errorMessage: string}
+
+    export default class ErrorBoundary extends React.Component<Props, State> {
+        constructor(props: Props){
+            super(props)
+
+            this.state = {
+                hasError: false,
+                errorMessage: '',
+            }
+        }
+
+        static getDerivedStateFromError(error: Error) {
+            return {
+                hasError: true,
+                errorMessage: error.toString()
+            }
+        }
+
+        // componentDidCatch를 추가
+        // getDerivedStateFromError에서 하지 못했던 부수 효과를 수행 가능
+        // render 단계가 아니라 커밋 단계에서 실행되기 떄문
+        // 로깅 등의 용도로 사용 가능
+        componentDidCatch(error: Error, info: ErrorInfo){
+            console.log(error);
+            console.log(info);
+        }
+
+        render(){
+            // 에러가 발생했을 경우에 렌더링할 JSX
+            if(this.state.hasError){
+                return (
+                    <div>
+                        <h1>에러가 발생했습니다.</h1>
+                        <p>{this.state.errorMessage}</p>
+                    </div>
+                )
+            }
+
+            // 일반적인 상황의 JSX
+            return this.props.children
+        }
+    }
+
+    // ...
+
+    //App.tsx
+    function App(){
+        return (
+            <ErrorBoundary>
+                <Child />
+            </ErrorBoundary>
+        )
+    }
+
+    function Child(){
+        const [error, setError] = useState(false)
+
+        const handleClick = () => {
+            setError((prev) => !prev)
+        }
+
+        if(error){
+            throw new Error('Error has been occurred.')
+        }
+
+        return <button onClick={handleClick}>에러 발생</button>
+    }
+}
+
+{
+    // 앞의 두 메서드는 ErrorBoundary 즉 에러 경계 컴포넌트를 만들기 위한 목적으로 많이 사용
+    // 리액트 전역에서 처리되지 않은 에러를 처리하기 위한 용도
+    // ErrorBoundary의 경계 외부에 있는 에러는 잡을 수 없다
+    function App(){
+        return (
+            <ErrorBoundary name="parent">
+                // Child에서 발생한 에러는 에기에서 잡힌다
+                <ErrorBoundary name="child">
+                    <Child />
+                </ErrorBoundary>
+            </ErrorBoundary>
+        )
+    }
+
+    // componentDidCatch는 개발 모드에서는 window까지 전파 
+    // 프로덕션 모드는 componentDidCatch에 잡히지 않은 에러만 window까지 전파
+    useEffect(() => {
+        // 개발 모드에서는 모든 에러에 대해 실행
+        // 프로덕션에서는 잡히지 않은 에러에 대해서만 실행
+        function handleError(){
+            console.log('window on error')
+        }
+
+        window.addEventListener('error', handleError)
+
+        return () => {
+            window.removeEventListener('error', handleError)
+        }
+    }, [])
+
+    // componentDidCatch의 두 번째 인수에서 이름은 Function.name 또는 컴포넌트의 displayName을 따른다
+    // 만약 const Component = memo(() => {...}) 와 같이 컴포넌트명을 추론할 수 없는 경우에는 단서가 부족하게 나온다
+    // 추적을 용이하게 하려면 기명 함수 또는 dsiplayName을 쓰는 습관을 들이는 것이 좋다
+}
+
+{
+    // 클래스 컴포넌트의 한계
+    // 데이터 흐름을 추적하기 어렵다: 생명주기의 서로 다른 여러 메서드에서 state의 업데이트가 일어날 수 있으며 코드 작성시
+    // 순서가 강제돼 있는 것이 아니기 때문에 사람이 읽기가 매우 어렵다
+
+    // 애플리케이션 내부 로직의 재사용이 어렵다: 컴포넌트간 중복 로직이 있을 경우 고차 컴포넌트로 감싸거나 props로 넘겨주어 재사용할 수 있다
+    // 하지만 공통 로직이 많아질수록 고차 컴포넌트 내지는 props가 많아지는 래퍼 지옥에 빠져들 위험성이 커진다
+    // extends PureComponent와 같이 상속해서 관리할 수도 있지만 이 역시 상속 클래스의 흐름을 쫓아야 하기 때문에 복잡도가 증가한다
+
+    // 기능이 많아질수록 컴포넌트의 크기가 커진다
+
+    // 클래스는 함수에 비해 상대적으로 어렵다: 대부분의 언어와 다르게 작동하는 this를 비롯한 자바스크립트의 작동 방식은 클래스 컴포넌트를 처음 접하는 사람
+    // 자바스크립트를 조금 해본 사람도 모두 혼란에 빠지게 할 수 있다
+}
+

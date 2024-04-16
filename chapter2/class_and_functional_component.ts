@@ -771,6 +771,44 @@
     // 클래스 컴포넌트의 props는 외부에서 변경되지 않는 이상 불변 값이지만 this가 가리키는 객체는 변경 가능한 값이다
     // 따라서 render 메서드를 비롯한 리액트의 생명주기 메서드가 변경된 값을 읽을 수 있다
     
-    
+    // 해당 방법을 해결하는 방법
+    // this.props를 조금 더 일찍 부르고 이를 함수의 인수로 넘기는 방법
+    // 접근하는 props와 state가 많아질수록 코드도 같이 복잡해진다 또한 showMessage가 다른 메서드에 의존하게 된다면 더욱 복잡해진다
+    class ClassComponent extends React.Component<Props, State> {
+        private showMessage = (name: string) => {
+            alert('Hello ' + name)
+        }
+
+        private handleClick = () => {
+            const {
+                props: {user},
+            } = this
+
+            setTimeout(() => this.showMessage(user), 3000)
+        }
+
+        public render(){
+            return <button onClick={this.handleClick}>Follow</button>
+        }
+    }
+
+    // render()에 필요한 값을 넣는 방법
+    // 클래스 컴포넌트 방식과 거리가 멀다
+    // 렌더링될 때마다 함수가 다시 생성되고 할당되기를 반복하기 때문에 성능에도 도움이 되지 앟는다
+    class ClassComponent2 export React.Component<Props, State> {
+        render(){
+            const props = this.props
+
+            const showMessage = () => {
+                alert('Hello ' + props.user)
+            }
+
+            const handleClick = () => {
+                setTimeout(showMessage, 3000)
+            }
+
+            return <button onClick={handleClick}>Follow</button>
+        }
+    }
 }
 

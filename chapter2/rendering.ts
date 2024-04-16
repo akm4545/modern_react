@@ -97,5 +97,16 @@
 }
 
 {
-    
+    // 렌더링 프로세스
+    // 컴포넌트 루트에서부터 아래로 내려가며 업데이트가 필요한 컴포넌트를 찾음
+    // 클래스 컴포넌트는 render 함수를 실행 함수 컴포넌트는 FunctionComponent() 그 자체를 호출한 뒤에 결과물 저장
+    // 렌더링 결과물은 JSX문법으로 구성돼 있고 자바스크립트로 컴파일 되면서 React.createElement()를 호출하는 구문으로 변경
+    // 예제
+    function Hello(){
+        return (
+            <TestComponent a={35} b="yceffort">
+                안녕하세요
+            </TestComponent>
+        )
+    }
 }

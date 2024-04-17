@@ -43,10 +43,64 @@
     // 위 두 가지 모두 자식 컴포넌트에서 반복
     // 리액트가 구 트리와 신규 트리 비교
     // mome를 하지 않았을 때 치러야 할 잠재적인 위험 비용이 더 크다
+
     // useMemo와 useCallback을 사용해 의존성 배열을 비교하고 필요에 따라 값을 재계산하는 과정과 이러한 처리 없이 값과 함수를 매번 재생성하는
     // 비용 중에서 무엇이 더 저렴한지 매번 계산해야 한다
     // 이 또한 마찬가지로 무조건 메모이제이션하는 방법을 먼저 고민할 필요가 있다
     // 리렌더링 발생 시 메모이제이션과 같은 별도 조치가 없다면 모든 객체가 재생성되고 참조가 달라진다
     // 달라진 참조에 대한 값을 어디서든 쓰지 않는다면 큰 문제가 되지 않을 수 있지만 이 값이 useEffect와 같은 의존성 배열에 쓰이면 
     // 변경된 참조로 인해 다른 쪽에도 영향을 미친다
+
+    // 예제
+    function useMath(number: number){
+        const [double, setDouble] = useState(0)
+        const [triple, setTriple] = useState(0)
+
+        useEffect(() => {
+            setDouble(number * 2)
+            setTriple(number * 3)
+        }, [number])
+
+        return {double, triple}
+    }
+
+    // useMath는 인수로 10이라는 고정값을 넘겨주므로 value는 항상 같다
+    // 그렇기 때문에 useEffect로 감싼 console.log가 실행이 안될것 같지만 버튼을 클릭하여 
+    // 렌더링을 일으키면 console.log가 출력된다
+    // 함수 컴포넌트인 App이 호출되면서 useMath가 계속해서 호출되고 객체 내부의 값은 같지만 참조가 변경되기 떄문
+    // useMath의 반환값을 useMemo로 감싼다면 값이 변경되지 않는 한 같은 결과물을 가질 수 있고 
+    // 사용하는 쪽에서도 참조의 투명성을 유지할 수 있게 된다
+    export default function App(){
+        const [counter, setCounter] = useState(0)
+        const value = useMath(10)
+
+        useEffect(() => {
+            console.log(value.double, value.triple)
+        }, [value])
+
+        function handleClick(){
+            setCounter((prev) => prev + 1)
+        }
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    // 최적화에 대한 확신이 없다면 가능한 한 모든 곳에 메모이제이션을 활용한 최적화를 하는것이 좋다
+}
+
+{
+    // 리액트를 배우고 있거나 깊이 이해하고 싶고 이를 위한 시간적 여유가 있다면 섣부른 메모이제이션을 지양하는 자세를 견지하면서 
+    // 실제 어느 지점에서 성능상 이점을 누릴 수 있는지 살펴보는 식으로 메모이제이션을 적용하는 것을 권장
+    // 만약 현업에서 리액트를 사용하고 있거나 실제로 다룰 예정이지만 성능에 대해 깊게 연구해 볼 시간적 여유가 없는 상황이라면 
+    // 일단 의심스러운 곳에는 먼저 다 적용해 볼 것을 권장한다
+    // props에 대한 얕은 비교를 수행하는 것보다 리액트 컴포넌트의 결과물을 다시 계산하고 실제 DOM까지 비교하는 작업이 더 무겁고 비싸다
+    // useMemo와 useCallback 또한 마찬가지
+    // useCallback의 경우 대부분 다른 컴포넌트의 props로 넘어가는 경우가 많을 것이다 
+    // 이 props로 넘어갔을 때 참조 투명성을 유지하기 위해서는 useCallback을 사용하는것이 좋다 (useMemo 또한 마찬가지)
+    // 성능에 대해서 지속적으로 모니터링하고 관찰하는 것보다 섣부른 메모이제이션 최적화가 주는 이점이 더 클 수 있다
 }

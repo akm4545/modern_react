@@ -109,4 +109,100 @@
             </TestComponent>
         )
     }
+
+    // 변환
+    function Hello(){
+        return React.createElement(
+            TestComponent,
+            {a: 35, b: 'yceffort'},
+            '안녕하세요',
+        )
+    }
+
+    // 결과물
+    {type: TestComponent, props: {a: 35, b: "yceffort", children: "안녕하세요"}}
+
+    // 해당 결과물로 모든 변경사항을 수집 (재조정)
+}
+
+{
+    // 렌더 단계
+    // 컴포넌트를 렌더링하고 변경 사항을 계산하는 모든 작업
+    // 크게 type, props, key 비교
+
+    // 커밋 단계
+    // 렌더 단계의 변경 사항을 실제 DOM에 적용해 사용자에게 보여주는 과정
+    // 모든 DOM노드 및 인스턴스를 가리키도록 리액트 내부의 참조 업데이트
+    // 생명주기 메서드 호출
+
+    // 렌더링 != 커밋
+    // 아무 변경사항이 감지되지 않는다면 커밋 단계 생략
+    // 렌더링은 꼭 가시적인 변경이 없어도 발생 가능
+
+    // 동시성 렌더링 
+    // 리액트 18 버전에서 나옴
+    // 렌더 단계가 비동기로 작동 우선순위를 낮추거나 중단, 재시작, 포기가 가능
+    // 브라우저의 동기 작업을 차단하지 않고 백그라운드에서 새로운 리액트 트리를 준비할 수도 있어 사용자는 더 나은 경험을 누릴 수 있다
+}
+
+{
+    // 리액트 컴포넌트 트리의 렌더링 과정 예제
+    import {useState} from 'react'
+
+    export default function A(){
+        return (
+            <div className="App">
+                <h1>Hello React!</h1>
+                <B />
+            </div>
+        )
+    }
+
+    function B(){
+        const [counter, setCounter] = useState(0)
+
+        function handleButtonClick() {
+            setCounter((previous) => previous + 1)
+        }
+
+        return (
+            <>
+                <label>
+                    <C number={counter}>
+                </label>
+                <button onClick={handleButtonClick}>+</button>
+            </>
+        )
+    }
+
+    function C({number}){
+        return (
+            <div>
+                {number} <D />
+            </div>
+        )
+    }
+
+    function D() {
+        return <>리액트 재밌다!</>
+    }
+
+    // 사용자가 B 컴포넌트의 버튼을 누른다면
+    // 1. B 컴포넌트의 setState가 호출
+    // 2. B 컴포넌트의 리렌더링 작업이 렌더링 큐에 들어감
+    // 3. 리액트는 트리 최상단에서부터 렌더링 경로 검사
+    // 4. A 컴포넌트는 리렌더링이 필요한 컴포넌트로 표시돼 있지 않으므로 별다른 작업을 하지 않음
+    // 5. 하위 컴포넌트인 B 컴포넌트는 업데이트가 필요하다고 체크돼 있으므로 B 리렌더링
+    // 6. 5번 과정에서 B는 C를 반환
+    // 7. C는 props인 number가 업데이트 그러므로 업데이트가 필요한 컴포넌트로 체크돼 있고 업데이트 진행
+    // 8. 7번 과정에서 C는 D를 반환
+    // 9. D도 업데이트가 필요한 컴포넌트로 체그되지 않았다 그러나 C가 렌더링됐으므로 자식인 D도 렌더링
+
+    // 컴포넌트 렌더링 최적화가 되어있지 않으면 하위 모든 컴포넌트에 영향을 미친다
+    // 부모가 변경됐다면 props변화와 상관없이 자식은 무조건 리렌더링 된다
+
+    // memo로 래핑하여 렌더 단계에서 컴포넌트 비교를 거쳤지만 memo로 선언한 덕분에 props가 변경되지 않으면 렌더링이 생략되므로 커밋 단계도 생략
+    const D = memo(() => {
+        return <>리액트 재밌다!</>
+    })
 }

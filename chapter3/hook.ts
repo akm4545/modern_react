@@ -57,3 +57,99 @@
         )
     }
 }
+
+{
+    // useState 구조 추측
+    function useState(initalValue){
+        let internalState = initalValue
+
+        function setState(newValue){
+            internalState = newValue
+        }
+
+        return [internalState, setState]
+    }
+
+    // 그러나 이는 정상작동하지 않음
+    // 이미 구조 분해 할당으로 state의 값을 이미 할당해 놓은 상태이기 떄문 
+    const [value, setValue] = useState(0)
+    setValue(1)
+    console.log(value) //0
+}
+
+{
+    // 구조 개선
+    // 이는 useState 훅의 모습과는 많이 동떨어져 있다
+    // state를 함수가 아닌 상수로 사용하고 있기 떄문
+    // 이를 해결하기 위해 리액트는 클로저 사용
+    function useState(initalValue){
+        let internalState = initalValue
+
+        function state(){
+            return internalState
+        }
+
+        function setState(newValue){
+            internalState = newValue
+        }
+
+        return [state, setState]
+    }
+
+    const [value, setValue] = useState(0)
+    setValue(1)
+    console.log(value()) //1
+}
+
+{
+    // useState 훅의 작동 방식 흉내
+    const MyReact = (function() {
+        const global = {}
+        let index = 0
+
+        function useState(initalState){
+            if(!global.states){
+                // 애플리케이션 전체의 states 배열을 초기화
+                // 최초 접근이라면 빈 배열로 초기화
+                global.states = []
+            }
+
+            // states 정보를 초기화해서 현재 상태값이 있는지 확인
+            // 없으면 초깃값으로 설정
+            const currentState = global.states[index] || initalState
+            // states의 값을 위해서 조회한 현재 값으로 업데이트
+            global.states[index] = currentState
+
+            // 즉시 실행 함수로 setter를 만든다
+            const setState = (function (){
+                // 현재 index를 클로저로 가둬놔서 이후에도 계속해서 동일한 index에 
+                // 접근할 수 있도록 한다
+                let currentIndex = index
+                return function (value) {
+                    global.states[currentIndex] = value
+                    // 컴포넌트 렌더링 실제 컴포넌트 렌더링 코드는 생략
+                }
+            })()
+            // useState를 쓸 때마다 index를 하나씩 추가 해당 index는 setState에서 사용
+            // 즉 하나의 state 마다 index가 할당돼 있어 그 index가 배열의 값(global.states)을
+            // 가리키고 필요할 때마다 그 값을 가져오게 한다
+            index = index + 1
+
+            return [currentState, setState]
+        }
+
+        // 실제 useState를 사용하는 컴포넌트
+        function Component(){
+            const [value, setValue] = useState(0)
+            // ...
+        }
+    })();
+
+    // 작동 자체만 구현했을 뿐 실제 구현체와는 차이가 있다
+    // 실제 코드는 useReducer를 이용해 구현 
+
+}
+
+{
+    // 게으른 초기화
+}

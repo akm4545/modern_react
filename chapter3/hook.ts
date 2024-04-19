@@ -642,4 +642,223 @@
 
 {
     // useCallback
+    // useCallback은 인수로 넘겨받은 콜백 자체를 기억한다
+    // 쉽게 말해 특정 함수를 새로 만들지 않고 다시 재사용한다는 의미이다
+
+    // 예제
+    // memo를 사용함에도 전체 자식 컴포넌트가 리렌더링되는 예제
+    const ChildComponent = memo(({name, value, onChange}) => {
+        // 렌더링이 수행되는지 확인하기 위해 넣었다
+        useEffect(() => {
+            console.log('rendering!', name)
+        })
+
+        return (
+            <>
+                <h1>
+                    {name} {value ? '켜짐' : '꺼짐'}
+                </h1>
+                <button onClick={onChange}>toggle</button>
+            </>
+        )
+    })
+
+    // memo를 사용했지만 status1의 value를 변경해도 전체 자식 컴포넌트가 리렌더링
+    // App의 state 값이 바뀌면서 App 컴포넌트가 리렌더링되고 그때마다 매번 onChange로 넘기는 함수가 재생성되고 있기 때문
+    function App(){
+        const [status1, setStatus1] = useState(false)
+        const [status2, setStatus2] = useState(false)
+
+        const toggle1 = () => {
+            setStatus1(!status1)
+        }
+
+        const toggle2 = () => {
+            setStatus2(!status2)
+        }
+
+        return (
+            <>
+                <ChildComponent name="1" value={status1} onChange={toggle1} />
+                <ChildComponent name="2" value={status2} onChange={toggle2} />
+            </>
+        )
+    }
+}
+
+{
+    // 값의 메모이제이션을 위해 useMemo를 사용했다면 함수의 메모이제이션을 위해 사용하는 것이 useCallback이다
+    // 첫 번째 인수 = 함수
+    // 두 번째 인수 = 의존성 배열
+    // 의존성 배열이 변경도지 않는 한 함수를 재생성하지 않음
+
+    const ChildComponent = memo(({name, value, onChange}) => {
+        useEffect(() => {
+            console.log('rendering!', name)
+        })
+
+        return (
+            <>
+                <h1>
+                    {name} {value ? '켜짐' : '꺼짐'}
+                </h1>
+                <button onClick={onChange}>toggle</button>
+            </>
+        )
+    })
+
+    function App(){
+        const [status1, setStatus1] = useState(false)
+        const [status2, setStatus2] = useState(false)
+
+        const toggle1 = useCallback(
+            function toggle1() {
+                setStatus1(!status1)
+            },
+            [status1],
+        )
+
+        const toggle2 = useCallback(
+            function toggle2() {
+                setStatus2(!status2)
+            },
+            [status2],
+        )
+
+        return (
+            <>
+                <ChildComponent name="1" value={status1} onChange={toggle1} />
+                <ChildComponent name="2" value={status2} onChange={toggle2} />
+            </>
+        )
+    }
+}
+
+{
+    // useCallback은 useMemo를 사용해서 구현 가능
+    export function usaCallback(callback, args){
+        currentHook = 8
+        return useMemo(() => callback, args)
+    }
+}
+
+{
+    // useMemo와 useCallback의 차이점은 메모이제이션 대상
+    // 다만 useMemo로 useCallback을 구현하는 경우 다음과 같이 코드가 불필요하게 길어지고 혼동을 야기할 수 있다
+    import {useState, useCallback, useMemo} from 'react'
+
+    export default function App(){
+        const [counter, setCounter] = useState(0)
+
+        // 아래 두 함수의 작동은 동일
+        const handleClick1 = useCallback(() => {
+            setCounter((prev) => prev + 1)
+        }, [])
+
+        const handleClick2 = useMemo(() => {
+            return () => setCounter((prev) => prev + 1)
+        }, [])
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick1}>+</button>
+                <button onClick={handleClick2}>+</button>
+            </>
+        )
+    }
+}
+
+{
+    // useRef
+    // useRef는 useState와 동일하게 컴포넌트 내부에서 렌더링이 일어나도록 변경 가능한 상태값을 저장
+    // 차이점
+    // useRef는 변환값인 객체 내부에 있는 current로 값에 접근 또는 변경 가능
+    // useRef는 그 값이 변하더라도 렌더링을 발생시키지 않는다
+
+    // 예제
+    function RefComponent(){
+        const count = useRef(0)
+
+        function handleClick() {
+            count.current += 1
+        }
+
+        // 버튼을 눌러도 변경된 count 값이 렌더링되지 않는다
+        return <button onClick={handleClick}>{count.current}</button>
+    }
+}
+
+{
+    // 렌더링에 영향을 미치지 않는 고정된 값을 관리하기 위해 useRef를 사용하지 않고
+    // 그냥 함수 외부에서 값을 선언해서 관리하는면 단점이 있다
+
+    // 컴포넌트가 렌더링되지 않았음에도 value라는 값이 존재한다
+    // 이는 메모리에 불필요한 값을 갖게 하는 악영향을 미친다
+    // 컴포넌트가 여러 번 생성된다면 각 컴포넌트에서 가리키는 값이 모두 value로 동일하다
+    // 컴포넌트가 초기화되는 지점이 다르더라도 하나의 값을 봐야 하는 경우라면 유효할 수 있지만 대부분의 경우에는
+    // 컴포넌트 인스턴스 하나당 하나의 값을 필요로 하는 것이 일반적이다
+    let value = 0
+
+    function Component(){
+        function handleClick() {
+            value += 1
+        }
+
+        //...
+    }
+}
+
+{
+    // useRef의 가장 일반적인 사용
+    // DOM 접근
+
+    function RefComponent(){
+        const inputRef = useRef()
+
+        // 이때는 미처 렌더링이 실행되기 전(반환되기 전)이므로 undefined를 반환
+        console.log(inputRef.current) //undefined
+
+        useEffect(() => {
+            console.log(inputRef.current) // <input type='text'></input>
+        }, [inputRef])
+
+        return <input ref={inputRef} type='text' //>
+    }
+
+    // useRef의 최초 기본값은 return 문에 정의해 둔 DOM이 아니고 useRef()로 넘겨받은 인수이다
+    // uesRef가 선언된 당시에는 아직 컴포넌트 렌더링 전이라 return으로 컴포넌트의 DOM이 반환되기 전이므로 undefined다
+}
+
+{
+    // useRef 활용 예
+    // useState의 이전 값을 저장하는 usePrevious() 같은 훅을 구현할때
+    function usePrevious(value){
+        const ref = useRef()
+
+        useEffect(() => {
+            ref.current = value
+        }, [value]) //value가 변경되면 그 값을 ref에 넣어둔가
+        
+        return ref.current
+    }
+
+    function SomeComponent(){
+        const [counter, setCounter] = useState(0)
+        const previouseCounter = usePrevious(counter)
+
+        function handleClick(){
+            setCounter((prev) => prev + 1)
+        }
+
+        // 0 (undefined)
+        // 1. 0
+        // 2. 1
+        // 3. 2
+        return(
+            <button onClick={handleClick}>
+                {counter} {previouseCounter}
+            </button>
+        )
+    }
 }

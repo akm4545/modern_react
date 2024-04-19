@@ -203,4 +203,110 @@
 
 {
     // useEffect
+    // 생명주기를 대체하기 위해 나온 훅이 아님
+    // 애플리케이션 내 컴포넌트의 여러 값들을 활용해 동기적으로 부수 효과를 만드는 메커니즘
+    // 이 부수 효과가 언제 일어나는지보다 어떤 상태값과 함께 실행되는지 살펴보는것이 중요
+}
+
+{
+    // useEffect 예제
+    // 첫 번째 인수 = 실행할 부수 효과
+    // 두 번째 인수 = 의존성 배열 
+    // 의존성 배열의 변경될 때마나 첫 번째 인수인 콜백 실행
+    function Component(){
+        //...
+        useEffect(() => {
+            //do something
+        }, [props, state])
+        // ...
+    }
+}
+
+{
+    // 함수 컴포넌트는 매번 함수를 실행해 렌더링 수행
+    function Component(){
+        const [counter, setCounter] = useState(0)
+
+        function handleClick(){
+            setCounter((prev) => prev + 1)
+        }
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    // 버튼을 누르면 useState의 원리에 따라 다음과 같이 작동
+    // 즉 함수 컴포넌트는 렌더링 시마다 고유의 state와 props 값을 가지고 있다
+    function Component(){
+        const counter = 1
+        //...
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    // useEffect 추가
+    function Component(){
+        const counter = 1
+
+        useEffect(() => {
+            console.log(counter) // 1, 2, 3, 4 ...
+        })
+
+        //...
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    // 자바스크립트의 proxy나 데이터 바인딩, 옵저버 같은 특별한 기능을 통해 값의 변화를 관찰하는 것이 아니고 렌더링 할 때마다 의존성에 있는
+    // 값을 보면서 이 의존성의 값이 이전과 다른 게 하나라도 있으면 부수 효과를 실행하는 평범한 함수
+}
+
+{
+    // 클린업 함수
+    // useEffect 내에서 반환하는 클린업 함수는 이벤트를 등록하고 지울 때 사용해야 한다고 알려져 있다
+    // 예제
+    import {useState, useEffect} from 'react'
+
+    export default function App() {
+        const [counter, setCounter] = useState(0)
+
+        function handleClick(){
+            setCounter((prev) => prev + 1)
+        }
+
+        useEffect(() => {
+            function addMouseEvent(){
+                console.log(counter)
+            }
+
+            window.addEventListener('click', addMouseEvent)
+
+            // 클린업 함수
+            return () => {
+                console.log('클린업 함수 실행!', counter)
+                window.removeEventListener('click', addMouseEvent)
+            }
+        }, [counter])
+
+        return (
+            <>
+                <h1>{counter}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
 }

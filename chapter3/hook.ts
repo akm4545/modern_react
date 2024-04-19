@@ -475,3 +475,171 @@
     // 빈 배열이 아닐때도 만약 특정 값을 사용하지만 해당 값의 변경 시점을 피할 목적이라면 메모이제이션을 적절히 활용해
     // 해당 값의 변화를 막거나 적당한 실행 위치를 다시 한번 고민해보는 것이 좋다
 }
+
+{
+    // useEffect의 첫 번째 인수에 함수명을 부여하라
+    // useEffect를 사용하는 많은 코드에서 첫 번째 인수로 익명 함수를 넘겨준다 
+    // 이는 리액트 공식 문서도 마찬가지다
+    useEffect(() => {
+        logging(user.id)
+    }, [user.id])
+
+    // 하지만 useEffect의 코드가 복잡하고 많아질수록 무슨 일을 하는 useEffect 코드인지 파악하기 어려워진다
+    // 이때 익명함수를 적절한 이름을 사용한 기명 함수로 바꾸는 것이 좋다
+    // 함수명 부여가 어색해 보일 수 있다지만 useEffect의 목적을 명확히 하고 그 책임을 최소한으로 좁힌다는 점에서 굉장히 유용하다
+    useEffect(
+        function logActiveUser(){
+            loggin(user.id)
+        },
+        [user.id],
+    )
+}
+
+{
+    // 거대한 useEffect를 만들지 마라
+    // 부수 효과의 크기가 커질수록 애플리케이션 성능에 악영향을 미친다
+    // useEffect가 컴포넌트 렌더링 이후에 실행되기 떄문에 렌더링 작업에는 영향을 적게 미칠 수 있지만
+    // 여전히 자바스크립트 실행 성능에 영향을 미친다
+    // 가능한 한 간결하고 가볍게 유지하는 것이 좋다
+    // 부득이하게 큰 useEffect를 만들어야 한다면 적은 의존성 배열을 사용하는 여러 개의 useEffect로 분리하는 것이 좋다
+    // 만약 의존성 배열이 너무 거대하고 관리하기 어려운 수준까지 이른다면 정확이 이 useEffect가 언제 발생하는지 알 수 없게 된다
+    // 불가피하게 여러 변수가 들어가야 하는 상황이라면 최대한 useCallback과 useMemo등으로 사전에 정제한 내용들만 useEffect에 담아두는 것이 좋다
+    // 이렇게 하면 언제 useEffect가 실행되는지 좀 더 명확하게 알 수 있다
+}
+
+{
+    // 불필요한 외부 함수를 만들지 마라
+    // useEffect의 크기가 작은 것과 같은 맥락에서 useEffect가 실행하는 콜백 또한 불필요하게 존재해서는 안된다
+    // 이 컴포넌트는 props를 받아서 그 정보를 바탕으로 API 호출을 하는 useEffect를 가지고 있다
+    // 그러나 useEffect 밖에서 함수를 선언하다 보니 불필요한 코드가 많아지고 가독성이 떨어졌다
+    function Component({id}: {id: string}){
+        const [info, setInfo] = useState<number | null>(null)
+        const controllerRef = useRef<AbortController | null>(null)
+        const fetchInformation = useCallback(async (fetchId: string) => {
+            controllerRef.current?.abort()
+            controllerRef.current = new AbortController()
+
+            const result = await fetchInfo(fetchId, {signal: controllerRef.signal})
+            setInfo(await result.json())
+        }, [])
+
+        useEffect(() => {
+            fetchInformation(id)
+
+            return () => controllerRef.current?.abort()
+        }, [id, fetchInformation])
+
+        return <div>렌더링</div>
+    }
+
+    // useEffect 외부 함수를 내부로 가져왔더니 훨씬 간결해졌다
+    // 불필요한 의존성 배열도 줄일 수 있었고 무한루프에 빠지기 위해 넣었던 코인 useCallback도 삭제할 수 있었다
+    // useEffect 내부에 사용할 부수 효과라면 내부에서 사용해서 정의해서 사용하는 편이 훨씬 도움이 된다
+    function Component({id}: {id: string}){
+        const [info, setInfo] = useState<number | null>(null)
+
+        useEffect(() => {
+            const controller = new AbortController();
+
+            (async () => {
+                const result = await fetchInfo(id, {signal: controller.signal})
+                setInfo(await result.json())
+            })()
+
+            return () => controller.abort()
+        }, [id])
+
+        return <div>렌더링</div>
+    }
+}
+
+{
+    // useEffect 콜백 함수로 비동기 함수가 사용 가능하다면 비동기 함수의 응답 속도에 따라 결과가 이상하게 나타날 수 있다
+    // 극적인 예로 이전 state 기반의 응답이 10초가 걸렸고 바뀐 state 기반의 응답이 1초 뒤에 왔다면 이전 state 기반으로 결과가
+    // 나와버리는 불상사가 생길 수 있다
+    // 이러한 문제를 useEffect의 경쟁 상태(race condition)이라고 한다
+    // useEffect 내부에서 비동기 함수를 선언해 실행하거나 즉시 실행 비동기 함수를 만들어서 사용하는 것은 가능하다
+    useEffect(() => {
+        let shouldIgnore = false
+
+        async function fetchData(){
+            const response = await fetch('http://some.data.com')
+            const result = await response.json()
+
+            if(!shouldIgnore){
+                setData(result)
+            }
+        }
+
+        fetchData()
+
+        return () => {
+            // shouldIgnore를 이용해 useState의 두 번째 인수를 실행을 막는 것뿐만 아니라
+            // AbortController를 활용해 직전 요청 자체를 취소하는 것도 좋은 방법이 될 수 있다
+            shouldIgnore = true
+        }
+    }, [])
+
+    // 다만 비동기 함수가 내부에 존재하게 되면 useEffect 내부에서 비동기 함수가 생성되고 실행되는 것을 반복하므로 클린업 함수에서 
+    // 이전 비동기 함수에 대한 처리를 추가하는 것이 좋다
+    // fetch의 경우 abortController 등으로 이전 요청을 취소하는 것이 좋다
+}
+
+{
+    // useMemo
+    // 비용이 큰 연산에 대한 결과를 저장(메모이제이션)해 두고 이 저장된 값을 반환하는 훅
+    // 리액트 최적화를 떠올릴 때 가장 먼저 언급되는 훅
+
+    import {useMemo} from 'react'
+
+    const memoizedValue = useMemo(() => expensiveComputation(a, b), [a, b])
+
+    // 첫 번째 인수 = 어떠한 값을 반환하는 생성 함수
+    // 두 번째 인수 = 해당 함수가 의존하는 값의 배열 
+
+    // useMemo는 렌더링 발생 시 의존성 배열의 값이 변경되지 않으면 함수를 재실행하지 않고 이전값 반환
+    // 의존성 배열의 값이 변경됐다면 첫 번째 인수의 함수를 실행한 후 반환하고 기억
+
+    // 컴포넌트도 useMemo 가능
+    function ExpensiveComponent({value}){
+        useEffect(() => {
+            console.log('rendering!')
+        })
+
+        return <span>{value + 1000}</span>
+    }
+
+    function App() {
+        const [value, setValue] = useState(0)
+        const [, triggerRendering] = useState(false)
+
+        //컴포넌트의 props를 기준으로 컴포넌트 자체를 메모이제이션했다
+        const MemoizedComponent = useMemo(
+            () => <ExpensiveComponent value={value} />,
+            [value]
+        )
+
+        function handleChange(e){
+            setValue(Number(e.target.value))
+        }
+
+        function handleClick(){
+            triggerRendering((prev) => !prev)
+        }
+
+        return (
+            <>
+                <input value={value} onChange={handleChange} />
+                // 클릭하여도 렌더링 발생 x value가 변해야 렌더링
+                <button onClick={handleClick}>렌더링 발생!</button>
+                {MemoizedComponent}
+            </>
+        )
+    }
+
+    // useMemo가 컴포넌트도 감쌀 수 있지만 React.memo를 쓰는 것이 더 현명하다
+}
+
+{
+    // useCallback
+}

@@ -151,5 +151,56 @@
 }
 
 {
+    // 게으른 초기화 (lazy initialization)
+    // 일반적으로 useState에서 기본값 선언을 위해 인수로 원시값을 넣음
+    // 특정한 값을 넘기는 함수를 인수로 넣을 수도 있다
+    // 값 대신 함수를 넘기는 것을 게으른 초기화라고 한다
+
+    // 예제
+    // 일반적인 useState 사용
+    // 바로 값을 집어넣음
+    const [count, setCount] = useState(
+        Number.parseInt(window.localStorage.getItem(cacheKey)),
+    )
+
     // 게으른 초기화
+    // 함수를 실행해 값을 반환한다
+    const [count, setCount] = useState(() => 
+        Number.parseInt(window.localStorage.getItem(cacheKey)),
+    )
+
+    // 게으른 초기화는 useState의 초깃값이 복잡하거나 무거운 연산을 포함하고 있을 때 사용
+    // state가 처음 만들어질 때만 사용되고 리렌더링에서는 무시
+
+    // 예제
+    import {useState} from 'react'
+
+    export default function App(){
+        const [state, setState] = useState(() => {
+            console.log('복잡한 연산...') //App 컴포넌트가 처음 구동될 때만 실행, 리렌더링 시에는 실행 x
+            return 0
+        })
+
+        function handleClick(){
+            setState((prev) => prev + 1)
+        }
+
+        return (
+            <div>
+                <h1>{state}</h1>
+                <button onClick={handleClick}>+</button>
+            </div>
+        )
+    }
+
+    // 리액트는 렌더링 시 함수 컴포넌트의 함수가 다시 실행 (useState 포함)
+    // useState 인수로 함수를 넣으면 이는 최초 렌더링 이후에는 실행되지 않고 최초의 state 값을 넣을 때만 실행
+    // Number.parseInt(window.localStorage.getItem(cacheKey)) 와 같은 실행시 어느정도 비용이 드는 값이 있다고 가정 시
+    // useState 인수로 사용하면 최초 렌더링과 초깃값이 있어 더 이상 필요 없는 리렌더링 시에도 계속 해당 값에 접근하여 낭비가 발생
+    // localStorage나 sessionStorage에 대한 접근 map, filter, find 같은 배열에 대한 접근 혹은 초깃값 계산을 위해
+    // 함수 호출이 필요할 때와 같이 무거운 연산을 포함해 실행 비용이 많이 드는 경우 게으른 초기화 사용
+}
+
+{
+    // useEffect
 }

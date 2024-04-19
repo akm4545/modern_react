@@ -838,7 +838,7 @@
 
         useEffect(() => {
             ref.current = value
-        }, [value]) //value가 변경되면 그 값을 ref에 넣어둔가
+        }, [value]) //value가 변경되면 그 값을 ref에 넣어둔다
         
         return ref.current
     }
@@ -859,6 +859,104 @@
             <button onClick={handleClick}>
                 {counter} {previouseCounter}
             </button>
+        )
+    }
+}
+
+{
+    // Preact에서의 useRef 구현
+    export function useRef(initalValue) {
+        currentHook = 5
+        return useMemo(() => ({current: initalValue}), [])
+    }
+}
+
+{
+    // useContext
+    // Context
+    // 전달해야 하는 데이터가 있는 컴포넌트와 전달받아야 하는 컴포넌트의 거리가 멀어질수록 코드는 복잡해진다
+    // 해당 기법을 prop 내려주기 (props drilling)라고 한다
+    <A props={something}>
+        <B props={something}>
+            <C props={something}>
+                <D props={something}>
+            </C>
+        </B>
+    </A>
+
+    // prop 내려주기는 제공, 사용쪽 모두 불편하다
+    // 이런 prop 내려주기를 극복하기 위해 등장한 개념이 콘텍스트다
+    // 콘텍스트를 사용하면 이러한 명시적 props 전달 없이도 선언한 하위 컴포넌트 모두에서 자유롭게 원하는 값을 사용할 수 있다
+}
+
+{
+    // useContext는 Context를 함수 컴포넌트에서 사용할 수 있게 해준다
+    // 상위 컴포넌트에서 만들어진 Context를 함수 컴포넌트에서 사용할 수 있도록 만들어진 훅
+    // 상위 컴포넌트 어딘가에서 선언된 <Context.Provider />에서 제공한 값을 사용할 수 있다
+    // 여러개가 존재한다면 가장 가까운 Provider의 값을 가져온다
+    const Context = createContext<{hello: string} | undefined>(undefined)
+
+    function ParentComponent(){
+        return (
+            <>
+                <Context.Provider value={{hello: 'react'}}>
+                    <Context.Provider value={{hello: 'javascript'}}>
+                        <ChildComponent />
+                    </Context.Provider>
+                </Context.Provider>
+            </>
+        )
+    }
+
+    function ChildComponent(){
+        const value = useContext(Context)
+
+        //react가 아닌 javascript가 반환된다
+        return <>{value ? value.hello : ''}</>
+    }
+}
+
+{
+    // useContext 내부에서 해당 콘텍스트가 존재하는 환경인지
+    // 즉 콘텍스트가 한 번이라도 초기화되어 값을 내려주고 있는지 확인하는 코드를 작성하는것이 좋다
+    const MyContext = createContext<{hello: string} | undefined>(undefined)
+
+    function ContextProvider({
+        children,
+        text,
+    }: PropsWithChildren<{text: string}>){
+        return (
+            <MyContext.Provider value={{hello: text}}>{children}</MyContext.Provider>
+        )
+    }
+
+    function useMyContext(){
+        const context = useContext(MyContext)
+
+        if(context === undefined){
+            throw new Error(
+                'useMyContext는 ContextProvider 내부에서만 사용할 수 있습니다.',
+            )
+        }
+
+        return context
+    }
+
+    function ChildComponent() {
+        //타입이 명확히 설정돼 있어서 굳이 undefined 체크를 하지 않아도 된다
+        // 이 컴포넌트가 Provider 하위에 없다면 에러가 발생할 것이다
+        const {hello} = useMyContext()
+
+        return <>{hello}</>
+    }
+
+    function ParentComponent(){
+        return (
+            <>
+                <ContextProvider text="react">
+                    <ChildComponent />
+                </ContextProvider>
+            </>
         )
     }
 }

@@ -919,6 +919,7 @@
 {
     // useContext 내부에서 해당 콘텍스트가 존재하는 환경인지
     // 즉 콘텍스트가 한 번이라도 초기화되어 값을 내려주고 있는지 확인하는 코드를 작성하는것이 좋다
+    // 타입스크립트를 사용하고 있으면 타입 추론에도 유용하다
     const MyContext = createContext<{hello: string} | undefined>(undefined)
 
     function ContextProvider({
@@ -954,6 +955,84 @@
         return (
             <>
                 <ContextProvider text="react">
+                    <ChildComponent />
+                </ContextProvider>
+            </>
+        )
+    }
+}
+
+{
+    // useContext 사용시 주의점
+    // 함수 컴포넌트 내부에서 사용 시 항상 컴포넌트 재활용이 어려워진다
+    // useContext가 선언돼 있으면 Provider에 의존성을 가지고 있는 셈이 되므로 아무데서나 재활용하기에는 어려운 컴포넌트가 된다
+    // useContext를 사용하는 컴포넌트를 최대한 작게 하거나 혹은 재사용되지 않을 만한 컴포넌트에서 사용해야 한다
+    // 최상위 루트 컴포넌트에 넣는 방법
+    // 콘텍스트가 많아질수록 루트 컴포넌트는 더 많은 콘텍슽로 둘러싸일 것이고 해당 props를 다수의 컴포넌트에서
+    // 사용할 수 있게끔 해야 하므로 불피요한 리소스가 낭비된다
+
+    // 일부 개발자들이 콘텍스트와 useContext를 상태 관리를 위한 리액트 API로 오해하고 있는데 상태를 주입해주는 API다
+    // 상태 관리 라이브러리가 되기 위해서는
+    // 1. 어떠한 상태극 기반으로 다른 상태를 만들어 낼 수 있어야 한다
+    // 2. 필요에 따라 이러한 상태 변화를 최적화할 수 있어야 한다
+    // 조건이 필요하지만 콘텍스트는 둘 중 어느 것도 하지 못한다
+    
+    const MyContext = createContext<{hello: string} | undefined>(undefined)
+
+    function ContextProvider({
+        children,
+        text,
+    }: PropsWithChildren<{text: string}>) {
+        return (
+            <MyContext.Provider value={{hello: text}}>{children}<MyContext.Provider>
+        )
+    }
+
+    function useMyContext(){
+        const context = useContext(MyContext)
+
+        if(context === undefined){
+            throw new Error(
+                'useMyContext는 ContextProvider 내부에서만 사용할 수 있습니다.',
+            )
+        }
+
+        return context
+    }
+
+    function GrandChildComponent(){
+        const {hello} = useMyContext()
+
+        useEffect(() => {
+            console.log('렌더링 GrandChildComponent')
+        })
+
+        return <h3>{hello}</h3>
+    }
+
+    function ChildComponent(){
+        useEffect(() => {
+            console.log('렌더링 ChildComponent')
+        })
+
+        return <GrandChildComponent><GrandChildComponent/>
+    }
+
+    function ParentComponent(){
+        const [text, setText] = useState('')
+
+        function handleChange(e: ChangeEvent<HTMLInputElement>) {
+            setText(e.target.value)
+        }
+
+        useEffect(() => {
+            console.log('렌더링 ParentComponent')
+        })
+
+        return (
+            <>
+                <ContextProvider text="react">
+                    <input text={text} onChange={handleChange} />
                     <ChildComponent />
                 </ContextProvider>
             </>

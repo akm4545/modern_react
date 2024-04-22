@@ -1018,6 +1018,9 @@
         return <GrandChildComponent><GrandChildComponent/>
     }
 
+    // text 변경시 이를 사용하는 text가 변경되는 ParentComponent컴포넌트와 이를 사용하는 GrandChildComponent만 리렌더링 될 것 같지만
+    // 전체가 리렌더링 된다 이는 부모가 리렌더링이 일어나면 자식도 리렌더링이 일어나기 때문이다
+    // useContext는 상태를 관리하는 마법이 아니라 주입의 기능이라는 것을 기억하고 있어야 한다
     function ParentComponent(){
         const [text, setText] = useState('')
 
@@ -1032,10 +1035,113 @@
         return (
             <>
                 <ContextProvider text="react">
-                    <input text={text} onChange={handleChange} />
+                    <input value={text} onChange={handleChange} />
                     <ChildComponent />
                 </ContextProvider>
             </>
         )
     }
+}
+
+{
+    // 해당 예제에서 ChildComponent가 렌더링되지 않게 막으려면 React.memo를 써야 한다
+    // useContext로 상태 주입을 최적화했다면 반드시 Provider의 값이 변경될 때 어떤 식으로 렌더링되는지 눈여겨 봐야한다
+    // useContext는 주입된 상태를 사용할 수 있을 뿐 그 자체로는 렌더링 최적화에 아무런 도움이 되지 않는다
+    const ChildComponent = memo(() => {
+        useEffect(() => {
+            console.log('렌더링 ChildComponent')
+        })
+
+        return <GrandChildComponent />
+    })
+}
+
+{
+    // useReducer
+    // useState와 비슷한 형태를 띠지만 좀 더 복잡한 상태값을 미리 정의해 놓은 시나리오에 따라 관리할 수 있다
+
+    // 반환값은 useState와 동일하게 길이가 2인 배열
+    // state: 현재 useReducer가 가지고 있는 값을 의미 useStat 반환 첫 번째 요소
+    // dispatcher: state를 업데이트 하는 함수 반환 두 번째 요소
+    // setState는 단순히 값을 넘겨주지만 여기서는 action을 넘겨준다는 점이 다르다 action은 state를 변경할 수 있는 액션을 의미
+
+    // useState의 인수와 달리 2개에서 3개의 인수를 필요로 한다
+    // reducer: useReducer의 기본 action을 정의하는 함수 reducer는 useReducer의 첫 번째 인수로 넘겨주어야 한다
+    // initialState: 두 번째 인수로 useReducer의 초깃값
+    // init: 초깃값을 지연해서 생성시키고 싶을 때 사용하는 함수 
+    // 필수값이 아니며 여기에 인수로 넘겨주는 함수가 존재한다면 게으른 초기화가 일어나며 initialState를 인수로 init함수가 시행
+
+    // 예제
+    // useReducer가 사용할 state를 정의
+    type State = {
+        count: number
+    }
+
+    // state의 변화를 발생시킬 action의 타입과 넘겨줄 값(payload)을 정의
+    // 꼭 type과 payload라는 네이밍을 지킬 필요도 없으며 굳이 객체일 필요도 없다
+    // 다만 이러한 네이밍이 가장 널리 쓰인다
+    type Action = {type: 'up' | 'down' | 'reset'; payload?: State}
+
+    // 무거운 연산이 포함된 게으른 초기화 함수
+    function init(count: State): State{
+        // count: State를 받아서 초깃값을 어떻게 정의할지 연산하면 된다
+        return count
+    }
+
+    // 초깃값
+    const initalState: State = {count: 0}
+
+    // 앞서 선언한 state와 action을 기반으로 state가 어떻게 변경될지 정의
+    function reducer(state: State, action:Action): State{
+        switch(action.type){
+            case 'up':
+                return {count: state.count + 1}
+            case 'down':
+                return {count: state.count - 1 > 0 ? state.count - 1 : 0}
+            case 'reset':
+                return init(action.payload || {count: 0})
+            default:
+                throw new Error(`Unexpected action type ${action.type}`)
+        }
+    }
+
+    export default function App() {
+        const [state, dispatcher] = useReducer(reducer, initalState, init)
+
+        function handleUpButtonClick() {
+            dispatcher({type: 'up'})
+        }
+
+        function handleDownButtonClick() {
+            dispatcher({type: 'down'})
+        }
+
+        function handleResetButtonClick() {
+            dispatcher({type: 'reset', payload: {count: 1}})
+        } 
+
+        return (
+            <div className="App">
+                <h1>{state.count}<h1>
+                <button onClick={handleUpButtonClick}>+</button>
+                <button onClick={handleDownButtonClick}>-</button>
+                <button onClick={handleResetButtonClick}>reset</button>
+            </div>
+        )
+    }
+
+    // 복잡해 보일 수 있지만 목저은 간단하다
+    // 복잡한 형태의 state를 사전에 정의된 dispatcher로만 수정할 수 있게 만들어 줌으로써
+    // state 값에 대한 접근은 컴포넌트에서만 가능하게 하고 이를 업데이트하는 방법에 대한 상세 정의는 컴포넌트 밖에다 둔 다음
+    // state의 업데이트를 미리 정의해둔 dispatcher로만 제한하는 것이다
+    // state 값을 변경하는 시나리오를 제한적으로 두고 이에 대한 변경을 빠르게 확인할 수 있게끔 하는 것이 useReducer의 목적이다
+
+    // 일반적으로 단순히 number나 boolean과 같이 간단한 값을 관리하는 것은 useState로 충분하지만
+    // state가 가져야 할 값이 복잡하고 이를 수정하는 경우의 수가 많아진다면 state를 관리하는 것이 어려워진다
+    // 또한 여러 개의 state를 관리하는 것보다 때로는 성격이 비슷한 여러 개의 state를 묶어 useReducer로 관리하는 편이 더 효율적일 수도 있다
+    // useReducer를 사용해 state를 관리하면 state를 사용하는 로직과 이를 관리하는 비즈니스 로직을 분리할 수 있어 state를 관리하기 편해진다
+
+    // 게으른 초기화 함수는 굳이 사용하지 않아도 된다 
+    // 다만 게으른 초기화 함수를 넣어줌으로써 useState에 함수를 넣은 것과 같은 동일한 이점을 누릴 수 있고 추가로 state에 대한
+    // 초기화가 필요할 때 reducer에서 이를 재사용할 수 있다는 장점도 있다
 }

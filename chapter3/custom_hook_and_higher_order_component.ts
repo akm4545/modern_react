@@ -353,3 +353,25 @@
         //do something...
     })
 }
+
+{
+    // 고차 컴포넌트를 사용해야 하는 경우
+    // 만약 로그인되지 않은 어떤 사용자가 컴포넌트에 접근하려 할 때 애플리케이션 관점에서 컴포넌트를 감추고 로그인을 요구하는 공통 컴포넌트를 
+    // 노출하는 것이 좋을 수 있다
+    // 혹은 에러 바운더리와 비슷하게 어떠한 특정 에러가 발생했을 때 현재 컴포넌트 대신 에러가 발생했음을 알릴 수 있는 컴포넌트를 노출하는 경우도 있을 것이다
+    function HookComponent() {
+        const {loggedIn} = useLogin()
+
+        if(!loggedIn){
+            return <LoginComponent />
+        }
+
+        return <>안녕하세요.</>
+    }
+
+    const HOCComponent = withLoginComponent(() => {
+        // loggedIn state의 값을 신경 쓰지 않고 그냥 컴포넌트에 필요한 로직만
+        // 추가해서 간단해졌다 loggedIn state에 따른 제어는 고차 컴포넌트에서 해줄 것이다
+        return <>안녕하세요.</>
+    })
+}

@@ -1414,3 +1414,96 @@
     // 오직 다른 훅 내부에서만 실행 가능 
     // 컴포넌트 레벨에서 작동 x
 }
+
+{
+    // 훅의 규칙 (rules-of-hooks)
+    // 이와 관련된 ESLint 규칙인 react-hooks/rules-of-hooks도 존재
+
+    // 공식문서에서 훅의 규칙
+    // 1. 최상위에서만 훅을 호출해야 한다 반복문이나 조건문, 중첩된 함수 내에서 훅을 실행할 수 없다
+    // 이 규칙을 따라야만 컴포넌트가 렌더링될 때마다 항상 동일한 순서로 훅이 호출되는 것을 보장할 수 있다
+    // 2. 훅을 호출할 수 있는 것은 리액트 함수 컴포넌트, 혹은 사용자 정의 훅의 두 가지 경우뿐이다 일반 자바스크립트 함수에서는 훅을 사용할 수 없다
+
+    // useState는 훅에 대한 정보 저장은 리액트 어딘가에 있는 index와 같은 키를 기반으로 구현(실제로는 객체 기반 링크드 리스트에 더 가깝다)
+    // 즉 useState나 useEffect는 모두 순서에 아주 큰 영향을 받는다
+    
+    // 예제
+    function Component(){
+        const [count, setCount] = useState(0)
+        const [required, setRequired] = useState(false)
+
+        useEffect(() => {
+            // do something...
+        }, [count, required])
+    }
+
+    // 이 컴포넌트는 파이버에서 다음과 같이 저장
+    {
+        memoizedState: 0, // setCount 훅
+        baseState: 0,
+        queue: { /** ... */},
+        baseUpdate: null,
+        next: { //setRequired훅
+            memoizedState: false,
+            baseState: false,
+            queue: { /** ... */},
+            baseUpdate: null,
+            next: { //useEffect훅
+                memoizedState: {
+                    tag: 192,
+                    create: () => {},
+                    destroy: undefined,
+                    deps: [0, false],
+                    next: {/*...*/}
+                },
+                baseState: null,
+                queue: null,
+                baseUpdate: null,
+            }
+        }
+    }
+
+    // 리액트 훅은 파이버 객체의 링크드 리스트의 호출 순서에 따라 저장
+    // 각 훅이 파이버 객체 내에서 순서에 의존해 state나 effect의 결과에 대한 값을 저장하고 있기 떄문
+    // 고정된 순서에 의존함으로써 이전 값에 대한 비교와 실행이 가능
+}
+
+{
+    // 순서를 보장받을 수 없는 상황
+    // 훅의 잘못된 예제
+
+    // setName을 빈 값으로 업데이트 시
+    // 첫번째 useEffect의 조건문으로 인해 2번째 훅이 useState가 되어버렸다
+    // 즉 링크드 리스트가 깨져버렸다 
+    // 이렇게 조건이나 다른 이슈로 인해 훅의 순서가 깨지거나 보장되지 않을 경우 리액트 코드는 에러를 발생시킨다
+    function Form(){
+        const [name, setName] = useState('Mary')
+
+        if(name !== ''){
+            useEffect(function persistForm(){
+                localStorage.setItem('formData', name)
+            })
+        }
+
+        const [surname, setSurname] = useState('Poppins')
+
+        useEffect(function updateTitle(){
+            document.title = name + ' ' + surname
+        })
+
+        //...
+    }
+
+    // 이 상황을 코드로 나타내면 다음과 같다
+    // 최초 렌더링
+    useState('Mary') // 1. 'Mary' 할당
+    useEffect(persistForm) // 2. 1에 있던 state를 기반으로 effect 실행
+    useState('Poppins') //3. 'Poppins' 할당
+    useEffect(updateTitle) //4. 3에 이는 35를 기반으로 effect 실행
+
+    //두 번째 렌더링
+    useState('Mary') //1. state를 읽음(useState의 인수는 첫 번째 렌더링에서 초깃값으로 사용됐으므로 여기에서 인수값은 무시, 저장해 두었던 Mary값 사용)
+    // useEffect(persistForm) // 조건문으로 실행 안됨
+    useState('Poppins') // 2. 원래는 3이었음 2가 되면서 useState의 값을 읽어오지 못하고 비교도 할 수 없음
+    useEffect(updateTitle) //3. 원래는 4였음 updateTitle을 하기 위한 함수를 대체하는데 실패
+}

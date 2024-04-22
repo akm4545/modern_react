@@ -1145,3 +1145,60 @@
     // 다만 게으른 초기화 함수를 넣어줌으로써 useState에 함수를 넣은 것과 같은 동일한 이점을 누릴 수 있고 추가로 state에 대한
     // 초기화가 필요할 때 reducer에서 이를 재사용할 수 있다는 장점도 있다
 }
+
+{
+    // Preact의 useState 코드 예제
+    // useReducer로 구현돼 있다
+
+    /**
+     *  @param {import('./index').StateUpdater<any>} [initialState]
+     */
+    export function useState(initalState){
+        currentHook = 1
+        return useReducer(invokeOrReturn, initalState)
+    }
+
+    // 첫 번째 인수는 값을 업데이트 하는 함수이거나 값 그 자체여야 한다
+    function reducer(prevState, newState){
+        return typeof newState === 'function' ? newState(prevState) : newState
+    }
+
+    // 두 번째 인수는 초깃값이기 때문에 별다른 처리를 할 필요가 없다
+    // 세번째 값은 두 번째 값을 기반으로 한 게으른 초기화를 함수다 (실행값 반환)
+    function init(initialArg: Initializer){
+        return typeof initialArg === 'function' ? initialArg() : initialArg
+    }
+
+    // 위 두 함수를 모두 useReducer에서 사용하면 다음과 같이 useState의 작동을 흉내 낼 수 있다
+    function useState(initialArg){
+        return useReducer(reducer, initialArg, init)
+    }
+}
+
+{
+    // 이와 반대로 useReducer를 useState로 구현할 수도 있다
+    const useReducer = (reducer, initialArg, init) => {
+        const [state, setState] = useState(
+            // 초기화 함수가 있으면 초깃값과 초기화 함수 실행
+            // 그렇지 않으면 초깃값을 넣는다
+            init ? () => init(initialArg) : initialArg,
+        )
+
+        // 값을 업데이트하는 dispatch를 넣어준다
+        const dispatch = useCallback(
+            (action) => setState((prev) => reducer(prev, action)),
+            [reducer]
+        )
+
+        //이 값을 메모이제이션 한다
+        return useMemo(() => [state, dispatch], [state, dispatch])
+    }
+
+    // useReducer나 useState 모두 클로저를 활용해 state를 관리한다 
+    // 따라서 필요에 맞게 선택해서 사용하면 된다
+}
+
+{
+    // useImperativeHandle
+    // 
+}

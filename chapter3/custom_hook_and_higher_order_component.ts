@@ -94,4 +94,29 @@
             </div>
         )
     }
+
+    // 훅으로 분리하지 않았다면 fetch로 API를 호출하는 모든 컴포넌트 내에서 공통적으로 관리되지 않는 최소 4개의 state를 
+    // 선언해서 각각 구현했어야 한다
+    // useReducer로 최적화해도 마찬가지로 useEffect도 필요하기 때문에 이 두 가지 훅을 fetch가 필요한 곳마다 중복해서 사용해야 한다
+
+    // 사용자 정의 훅은 내부에 useState와 useEffect 등을 가지고 자신만의 원하는 훅을 만드는 기법으로 내부에서 훅을 사용하고 있기
+    // 때문에 당연히 이름에 use를 붙어야 한다
+    // react-hooks/rules-of-hooks의 도움을 받기 위해서는 use로 시작하는 이름을 가져야 한다 그렇지 않으면 에러가 발생한다
+    
+    // 이름을 useFetch에서 fetch로 변경
+    function fetch<T>(
+        url: string,
+        {method, body}: {method: string; body?: XMLHttpRequestBodyInit},
+    ){
+        // 에러 발생
+        const [result, setResult] = useState<T | undefined>()
+        //...
+    }
+
+    // 이러한 사용자 정의 훅은 리액트 커뮤니티에서 다양하게 찾아볼 수 있다
+    // use-Hooks, react-use, ahooks 등의 저장소가 있다
+}
+
+{
+    // 
 }

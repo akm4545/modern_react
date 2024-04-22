@@ -1331,5 +1331,47 @@
 }
 
 {
-    // 
+    // useLayoutEffect
+    // 공식문서 정의
+    // 이 함수의 시그니처는 useEffect와 동일하나 모든 DOM의 변경 후에 동기적으로 발생
+    // 시그니처가 동일 = 두 훅의 형태나 사용 예제가 동일
+
+    // 사용법 비교
+    function App(){
+        const [count, setCount] = useState(0)
+
+        useEffect(() => {
+            console.log('useEffect', count)
+        }, [count])
+
+        useLayoutEffect(() => {
+            console.log('useLayoutEffect', count)
+        }, [count])
+
+        function handleClick() {
+            setCount((prev) => prev + 1)
+        }
+
+        return (
+            <>
+                <h1>{count}</h1>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    // 모든 DOM의 변경 후에 라는 말에도 DOM 변경이란 렌더링이지 브라우저에 실제로 해당 변경 사항이 반영되는 시점을 의미하지 않음
+    // 순서
+    // 1. 리액트가 DOM을 업데이트
+    // 2. useLayoutEffect를 실행
+    // 3. 브라우저에 변경 사항을 반영
+    // 4. useEffect를 실행
+
+    // 동기적 실행 = useLayoutEffect의 실행이 종료될 때까지 기다른 다음 화면을 그림
+    // 성능상 문제가 발생할 수도 있음
+
+    // useLayoutEffect의 특성상 DOM은 계산됐지만 이것이 화면에 반영되기 전에 하고 싶은 작업이 있을 때와 같이 
+    // 반드시 필요할 때만 사용하는 것이 좋다
+    // 특정 요소에 따라 DOM 요소를 기반으로 한 애니메이션, 스크롤 위치를 제어하는 등 화면에 반영되기 전에 하고 싶은 작업에
+    // useLayoutEffect를 사용한다면 useEffect를 사용했을 때보다 훨씬 더 자연스러운 사용자 경험을 제공할 수 있다
 }

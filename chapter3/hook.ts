@@ -1375,3 +1375,42 @@
     // 특정 요소에 따라 DOM 요소를 기반으로 한 애니메이션, 스크롤 위치를 제어하는 등 화면에 반영되기 전에 하고 싶은 작업에
     // useLayoutEffect를 사용한다면 useEffect를 사용했을 때보다 훨씬 더 자연스러운 사용자 경험을 제공할 수 있다
 }
+
+{
+    // useDebugValue
+    // 프로덕션 웹서비스에서 사용하는 훅은 아니다
+    // 디버깅하고 싶은 정보를 이 훅에다 사용하면 리액트 개발자 도구에서 볼 수 있다
+    
+    // 예제
+    // 현재 시간을 반환하는 사용자 정의 훅
+    function useDate(){
+        const date = new Date()
+        // useDebugValue로 디버깅 정보를 기록
+        useDebugValue(date, (date) => `현재 시간: ${date.toISOString()}`)
+
+        return date
+    }
+
+    export default function App(){
+        const date = useDate()
+        const [counter, setCounter] = useState(0) //렌더링을 발생시키기 위한 변수
+
+        function handleClick() {
+            setCounter((prev) => prev + 1)
+        }
+
+        return (
+            <div className="App">
+                <h1>
+                    {counter} {date.toISOString()}
+                </h1>
+                <button onClick={handleClick}>+</button>
+            </div>
+        )
+    }
+
+    // useDebugValue는 사용자 정의 훅 내부의 내용에 대한 정보를 남길 수 있는 훅
+    // 두 번째 인수로 포매팅 함수를 전달하면 이에 대한 값이 변경됐을 때만 호출되어 포매팅된 값 노출
+    // 오직 다른 훅 내부에서만 실행 가능 
+    // 컴포넌트 레벨에서 작동 x
+}

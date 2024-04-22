@@ -247,4 +247,80 @@
 
 {
     // 고차 함수를 활용한 리액트 고차 컴포넌트 만들기
+    // 사용자 인증 정보에 따라서 인증된 사용자에게는 개인화된 컴포넌트를 그렇지 않은 사용자에게는 별도로 정의된 공통 컴포넌트를 보여주는 시나리오
+    // 고차 함수의 특징에 따라 개발자가 만든 또 다른 함수를 반환할 수 있다는 점에서 고차 컴포넌트를 사용하면 매우 유용하다
+    // 예제
+    interface LoginProps{
+        loginRequired?: boolean
+    }
+
+    function withLoginComponent<T>(Component: ComponentType<T>) {
+        return function (props: T & LoginProps) {
+            const {loginRequired, ...restProps} = props
+
+            if(loginRequired){
+                return <>로그인이 필요합니다.</>
+            }
+
+            return <Component {...(restProps as T)} ><Component />
+        }
+    }
+    
+    // 원래 구현하고자 하는 컴포넌트를 만들고 withLoginComponent로 감싸기만 하면 끝이다
+    // 로그인 여부, 로그인이 안 되면 다른 컴포넌트를 렌더링하는 책임은 모두
+    // 고차 컴포넌트인 withLoginComponent에 맡길 수 있어 매우 편리하다
+
+    // 1. withLoginComponent 함수를 실행하기 전에 익명 함수를 실행하여 h3 컴포넌트 반환
+    // 2. h3 컴포넌트가 withLoginComponent의 인수로 들어가게 된다
+    // 3. props 타입은 ComponentType<h3> 타입과 LoginProps 타입의 유니온 타입 
+    const Component = withLoginComponent((props: {value: string}) => {
+        return <h3>{props.value}</h3>
+    })
+
+    export default function App(){
+        // 로그인 관련 정보를 가져온다
+        const isLogin = true
+        return <Component value="text" loginRequired={isLogin} ><Component />
+        // return <Component value="text" />;
+    }
+
+    // Component는 일바적인 함수 컴포넌트와 같은 평범한 컴포넌트지만 이 함수 자체를 withLoginComponent라 불리는 고차 컴포넌트로 감싸뒀다
+    // withLoginComponent는 함수(함수 컴포넌트)를 인수로 받으며 컴포넌트를 반환하는 고차 컴포넌트다
+    // 이 컴포넌트는 props에 loginRequired가 있다면 넘겨받은 함수를 반환하는것이 아니라 "로그인이 필요합니다" 라는 전혀 다른 결과를 반환한다
+    // 이러한 인증 처리는 서버나 NGINX와 같이 자바스크립트 이전 단계에서 처리하는 편이 훨씬 효율적이다
+
+    // 이처럼 고차 컴포넌트는 컴포넌트 전체를 감쌀 수 있다는 점에서 사용자 정의 훅보다 더욱 큰 영향력을 컴포넌트에 미칠 수 있다
+    // 단순히 값을 반환하는 부수 효과를 실행하는 사용자 정의훅과는 다르게 고차 컴포넌트는 컴포넌트의 결과물에 영향을 미칠 수 있는 다른 공통된 작업을 처리할 수 있다
+}
+
+{
+    // 고차 컴포넌트 주의점
+    // 고차 컴포넌트는 with로 시작하는 이름을 사용해야 한다
+    // 리액트 라우터의 withRouter와 같이 리액트 커뮤니티에 널리 퍼진 일종의 관습이라 볼 수 있다
+    // with가 접두사로 붙어 있으면 고차 컴포넌트임을 손쉽게 알아채어 개발자 스스로가 컴포넌트 사용에 주의를 기울일 수 있으므로 반드시 with로 시작하는
+    // 접두사로 고차 컴포넌트로 만들자
+
+    // 고차 컴포넌트는 부수 효과를 최소화해야 한다
+    // 고차 컴포넌트는 반드시 컴포넌트를 인수로 받게 되는데 반드시 컴포넌트의 props를 임의로 수정, 추가, 삭제하는 일은 없어야 한다
+    // 앞의 예제의 경우 loginRequired라는 props를 추가했을 뿐 기존의 인수로 받는 props는 건드리지 않았다
+    // 만약 기존 컴포넌트에서 사용하는 props를 수정하거나 삭제한다면 고차 컴포넌트를 사용하는 쪽에서 언제 props가 수정될지 모른다는 우려를 가지고 개발해야 하는 불편함이 생긴다
+    // 이는 컴포넌트를 이용하는 입장에서 예측하지 못한 상황에서 props가 변경될지도 모른다는 사실을 계속 염두에 둬야 하는 부담감을 주게 된다
+    // 만약 컴포넌트에 무언가 추가적인 정보를 제공해 줄 목적이라면 별도로 props로 내려주는 것이 좋다
+
+    // 마지막으로 주의할 점은 여러 개의 고차 컴포넌트로 컴포넌트를 감쌀 경우 복잡성이 커진다는 것이다
+    // 고차 컴포넌트가 컴포넌트를 또 다른 컴포넌트로 감싸는 구조로 돼 있다 보니 여러 개의 고차 컴포넌트가 반복적으로 
+    // 컴포넌트를 감쌀 경우 복잡성이 매우 커진다
+    // 고차 컴포넌트가 증가할수록 개발자는 이것이 어떤 결과를 만들어 낼지 예측하기 어려워진다
+    // 따라서 고차 컴포넌트는 최소한으로 사용하는 것이 좋다
+    const Component = withHigherOrderComponent1(
+        withHigherOrderComponent2(
+            withHigherOrderComponent3(
+                withHigherOrderComponent4(
+                    withHigherOrderComponent5(() => {
+                        return <>안녕하세요</>
+                    }),
+                ),
+            ),
+        ),
+    )
 }

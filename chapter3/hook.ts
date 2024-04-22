@@ -1200,5 +1200,136 @@
 
 {
     // useImperativeHandle
+
+    // ref는 useRef에서 반환한 객체 
+    // 주로 리액트 컴포넌트의 props인 ref에 넣어 HTMLElement에 접근하는 용도로 사용
+    // key와 마찬가지로 ref도 리액트 컴포넌트의 props로 사용할 수 있는 예약어로서 별도로 선언돼 있지 않아도 사용 가능
+
+    // 상위 컴포넌트에서 접근하고 싶은 ref가 있지만 이를 직접 props로 넣어 사용할 수 없다고 가정시 
+    function ChildComponent({ref}){
+        useEffect(() => {
+            // undefined
+            console.log(ref)
+        }, [ref])
+
+        return <div>안녕</div>
+    }
+
+    function ParentComponent(){
+        const inputRef = useRef()
+
+        return (
+            <>
+                <input ref={inputRef} />
+                // 리액트에서 ref는 props로 쓸 수 없다는 경고문과 함께 접근 시도시 undefined를 반환
+                <ChildComponent ref={inputRef} />
+            </>
+        )
+    }
+}
+
+{
+    // 문제 해결 코드
+    // 예약어 대신 다른 props로 전달
+    function ChildComponent({parentRef}) {
+        useEffect(() => {
+            //{current: undefined}
+            //{current: HTMLInputElement}
+            console.log(parentRef)
+        }, [parentRef])
+
+        return <div>안녕</div>
+    }
+
+    function ParentComponent(){
+        const inputRef = useRef()
+
+        return (
+            <>
+                <input ref={inputRef} />
+                <ChildComponent parentRef={inputRef} />
+            </>
+        )
+    }
+
+    // forwardRef는 방금 작성한 코드와 동일한 작업을 하는 리액트 API
+}
+
+{
+    // 단순히 props로 구현 가능하지만 ref를 전달하는데 있어서 일관성을 제공하기 위함
+    // 네이밍의 자유가 주어진 props 보다는 forwardRef를 사용하면 더 확실하게 ref를 전달할 것임을 예측할 수 있고 사용 쪽에서도
+    // 안정적으로 받아서 사용 가능
+
+    // forwardRef 예제
+    // 받고자 하는 컴포넌트를 forwardRef로 감싸고 두 번째 인수로 ref를 전달받는다
+    // 부모 컴포넌트에서는 동일하게 props.ref를 통해 ref를 넘겨주면 된다
+    const ChildComponent = forwardRef((props, ref) => {
+        useEffect(() => {
+            // {current: undefined}
+            // {current: HTMLElement}
+            console.log(ref)
+        }, [ref])
+
+        return <div>안녕!</div>
+    })
+
+    function ParentComponent(){
+        const inputRef = useRef()
+
+        return (
+            <>
+                <input ref={inputRef} />
+                <ChildComponent ref={inputRef} />
+            </>
+        )
+    }
+}
+
+{
+    // useImperatibeHandle
+    // 부모에게서 넘겨받은 ref를 원하는 대로 수정할 수 있는 훅 (원하는 값이나 액션 정의 가능)
+    // 예시
+    const Input = forwardRef((props, ref) => {
+        //useImperativeHandle을 사용하면 ref의 동작을 추가로 정의할 수 있다
+        useImperativeHandle(
+            ref,
+            () => ({
+                alert: () => alert(props.value),
+            }),
+            //useEffect의 deps와 같다
+            [props.value],
+        )
+
+        return <input ref={ref} {...props} />
+    })
+
+    // ref는 {current: <HTMLElement>}와 같은 형태로 HTMLElement만 주입할 수 있는 개체였다
+    // 여기서는 전달받은 ref에다 useImperativeHandle 훅을 사용해 추가적인 동작을 정의했다
+    // 이로써 부모는 단순히 HTMLElement뿐만 아니라 자식 컴포넌트에서 새롭게 설정한 키와 값에 대해서도 접근할 수 있게 됐다
+    function App() {
+        //input에 사용할 ref
+        const inputRef = useRef()
+        //input의 value
+        const [text, setText] = useState('')
+
+        function handleClick() {
+            //inputRef에 추가한 alert라는 동작을 사용할 수 있다
+            inputRef.current.alert()
+        }
+
+        function handleChange(e) {
+            setText(e.target.value)
+        }
+
+        return (
+            <>
+                <Input ref={inputRef} value={text} onChange={handleChange} />
+                <button onClick={handleClick}>Focus</button>
+            </>
+        )
+    }
+}
+
+{
     // 
 }

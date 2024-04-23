@@ -174,4 +174,38 @@
     ReactDOM.hydrate(<App />, element)
 
     
+    // render와의 차이점은 기본적으로 이미 렌더링된 HTML이 있다는 가정하에 작업이 수행
+    // 이벤트를 붙이는 작업만 실행
+
+    // hydrate의 두 번째 인수로 renderToStaticMarkup 등으로 생성된 인수를 넘겨주면
+    // 서버에서 제공받은 HTML에 App 컴포넌트에 있는 것과 마찬가지로 <span/>이 있기릴 기대했지만 이 요소가 없다는 경고 메세지 출력
+    // rootElement 내부에는 <App/>을 렌더링한 정보가 이미 포함돼 있어야만 hydrate를 실행 가능
+    <!DOCTYPE html>
+    <head>
+        <title>React App</title>
+    </head>
+    <body>
+        // root에 아무런 HTML도 없다
+        <div id="root"></div>
+    </body>
+    </html>
+    function App(){
+        return <span>안녕하세요.</span>
+    }
+
+    import * as ReactDOM from 'react-dom'
+
+    import App from './App'
+
+    const rootElement = document.getElementsByName('root')
+
+    ReactDOM.hydrate(<App />, rootElement)
+
+    // hydrate는 렌더링을 한 번 수행하면서 렌더링 결과물 HTML과 인수로 넘겨받은 HTML을 비교하는 작업을 수행한다
+    // 이 때문에 경고가 발생하고 불일치가 발생하면 hydrate가 랜더링한 기준으로 웹페이지를 그리게 된다
+    // 이것이 올바른 사용법은 아니다 
+    // 이렇게 렌더링을 하면 사실상 서버와 클라이언트에서 두 번 렌더링을 하게 되고 결국 서버 사이드 렌더링의 장점을 포기하는 것이기 때문에 반드시 고쳐야 한다
+    // 불가피하게 불일치가 발생할 수 있는 경우에는 해당 요소에 suppressHydrationWarning을 추가해 경고를 끌 수 있다
+    // 하지만 useEffect를 통해 노출하는 등의 방법이 있으므로 서버에서는 굳이 해당 함수를 실행조차 하지 않는 것이 나을 수 있다
+    <div suppressHydrationWarning>{new Date().getTime()}</div>
 }

@@ -4,7 +4,7 @@ import './App.css';
 
 import { useEffect } from 'react';
 import {TodoResponse} from '../fetch';
-import {Todo} from '../Todo';
+import {Todo} from './Todo';
 
 // 사용자가 만드는 리액트 애플리케이션의 시작점
 // todos를 props로 받는데 서버에서 요청하는 todos를 받는다 

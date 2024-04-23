@@ -12,7 +12,7 @@ export function Todo({ todo } : { todo: TodoResponse }){
     return (
         <li>
             <span>
-                {userId}-{id}) {title} {finished? '완료' : '미완료'}
+                {userId}-{id}) {title} {finished ? '완료' : '미완료'}
                 <button onClick={handleClick}>토글</button>
             </span>
         </li>

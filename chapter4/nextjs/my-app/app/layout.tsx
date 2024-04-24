@@ -60,10 +60,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <header />
-      <body className="body">
-      </body>
-      {/* <body className={inter.className}>{children}</body> */}
+      <head />
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

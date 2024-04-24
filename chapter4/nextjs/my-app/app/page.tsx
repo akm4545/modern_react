@@ -1,113 +1,71 @@
-import Image from "next/image";
+// _app.tsx, _error.tsx, _document.tsx, 404.tsx, 500.tsx가 Next.js에서 제공하는 예약어로 관리되는 페이지
+// react-pages에 영감을 받아 만들어져 라우팅이 파일명으로 이어지는 구조가 Next.js에서 현재까지 이어지고 있다
+// /pages(next13 -> /app) 디렉터리를 기초로 구성되며 각 페이지에 있는 default export로 내보낸 함수가 해당 페이지의 루트 컴포넌트가 된다
 
-export default function Home() {
+// 예제 프로젝트의 구성 정리
+// /pages/index.tsx: 웹사이트 루트 localhost:3000
+
+// /pages/hello.tsx: /pages가 생략 파일명이 주소가 된다 localhost:3000/hello
+
+// /pages/hello/world.tsx: 디렉터리 깊이만큼 주소 설정 localhost:3000/hello/world
+// 주의점은 hello/index.tsx와 hello.tsx 모두 같은 주소를 바라본다 
+
+// /pages/hello/[greeting].tsx: []의 의미는 여기에 어떠한 문자도 올 수 있다는 뜻
+// 서버 사이드에서 greeting 이라는 변수에 사용자가 접속한 주소가 오게 된다
+// localhost:3000/hello/1, localhost:3000/hello/greeting 모두 유효 /pages/hello/[greeting].tsx로 오게 된다
+// greeting 변수에는 각각 1, greeting이라는 값이 들어온다
+// 만약 /pages/hello/world.tsx와 같이 이미 정의된 주소가 있다면 정의된 주소가 우선한다
+
+// /pages/hi/[...props].tsx: 전개연산자와 동일 /hi 하위의 모든 주소가 여기로 온다
+// localhost:3000/hi/hello, localhost:3000/hi/hello/world, localhost:3000/hi/hello/world/foo 등이 여기로 온다
+// [...props] 값은 props라는 변수에 배열로 온다
+
+// []를 사용해 라우팅을 정의하는 예제
+// pages/hi/[...props].tsx
+
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { NextPageContext } from 'next';
+
+export default function HiAll({ props: serverProps }: { props: string[] }){
+  // 클라이언트에서 값을 가져오는 법
+  const {
+    query: { props },
+  } = useRouter()
+
+  useEffect(() => {
+    console.log(props)
+    console.log(JSON.stringify(props) === JSON.stringify(serverProps)) //true
+  }, [props, serverProps])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+    <>
+      hi{' '}
+      <ul>
+        {serverProps.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </>
+  )
 }
+
+export const getServerSideProps = (context: NextPageContext) => {
+  // 서버에서 값을 가져오는 법
+  const {
+    query: { props }, // string | stirng[] | undefined
+  } = context
+
+  // 서버에서 클라이언트로 값을 내려주는 것은 이후에 설명
+  return {
+    props: {
+      props,
+    },
+  }
+}
+
+// 위 페이지를 다음과 같은 주소로 접근하면 props에 다음과 같은 값이 담긴다
+// /hi/1:['1']
+// /hi/1/2:['1', '2']
+// /hi/1/2/3:['1', '2', '3']
+// /hi/my/name/is:['my', 'name', 'is']

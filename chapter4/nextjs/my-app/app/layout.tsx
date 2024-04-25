@@ -83,3 +83,61 @@ export default function RootLayout({
 // export default function MyApp({ Component, pageProps }: AppProps){
 //   return <Component {...pageProps} />
 // }
+
+// 최근의 자바스크립트 내부에 스타일시트를 삽입하는 CSS-in-JS 방식이 유행
+// CSS와의 비교시 코드 작성 편의성 외에 성능 이점을 가지고 있는지는 논쟁
+// 직관적이고 편리
+// 해당 라이브러리로는 styled-jsx, styled-components, Emotion, Linaria등이 있다
+// styled-components가 가장 많은 사용자를 보유 중
+
+// 예제
+import Document, {
+  Html,
+  Head,
+  Main,
+  NextScript,
+  DocumentContext,
+  DocumentInitialProps,
+} from 'next/document'
+import {ServerStyleSheet} from 'styled-components'
+
+export default function MyDocument(){
+  return (
+    <Html lang="ko">
+      <Head />
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
+
+MyDocument.getInitialProps = async (
+  ctx: DocumentContext,
+): Promise<DocumentInitialProps> => {
+  const sheet = new ServerStyleSheet()
+  const originalRenderPage = ctx.renderPage
+
+  console.log(sheet)
+
+  try{
+    ctx.renderPage = () => 
+      originalRenderPage({
+        enhanceApp: (App) => (props) => sheet.collectStyles(<App {...props} />),
+      })
+    
+      const initialProps = await Document.getInitialProps(ctx)
+      return {
+        ...initialProps,
+        styles: (
+          <>
+            {initialProps.styles}
+            {sheet.getStyleElement()}
+          </>
+        )
+      }
+  } finally {
+    sheet.seal()
+  }
+}

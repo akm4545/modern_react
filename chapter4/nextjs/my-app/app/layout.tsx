@@ -116,18 +116,29 @@ export default function MyDocument(){
 MyDocument.getInitialProps = async (
   ctx: DocumentContext,
 ): Promise<DocumentInitialProps> => {
+  // styled-components의 스타일을 서버에서 초기화해 사용되는 클래스
+  // 서버에서 styled-components가 작동하기 위한 다양한 기능을 가지고 있다
   const sheet = new ServerStyleSheet()
+  // 기존의 ctx.renderPage가 하는 작업에 추가적으로 styled-components 관련 작업을 하기 위해 별도 변수로 분리
   const originalRenderPage = ctx.renderPage
 
   console.log(sheet)
 
   try{
-    ctx.renderPage = () => 
+    ctx.renderPage = () =>
+      //  기존에 해야 하는 작업과 함께 enhanceApp (App 렌더링 시 추가 수행 작업) 정의
       originalRenderPage({
+        // 추가 작업 내용 
+        // sheet.collectStyles는 StyleSheetManager라고 불리는 Context.API로 감싸는 역할
+        // 우리가 가지고 있는 기존의 <App/> 위에 styled-components의 Context.API로 한 번 더 감싼 형태
         enhanceApp: (App) => (props) => sheet.collectStyles(<App {...props} />),
       })
     
+      // 기존의 _document.tex가 렌더링을 수행할 때 필요한 getInitialProps를 생성하는 작업
       const initialProps = await Document.getInitialProps(ctx)
+
+      // 기본적으로 내려주는 props에 추가적으로 styled-components가 모아둔 자바스크립트 파일 내 스타일 반환
+      // 이렇게 되면 서버 사이드 렌더링 시에 최초로 _document 렌더링 될 때 styled-components에서 수집한 스타일도 함께 내려줄 수 있다
       return {
         ...initialProps,
         styles: (
@@ -141,3 +152,84 @@ MyDocument.getInitialProps = async (
     sheet.seal()
   }
 }
+
+// 리액트 트리 내부에서 사용하고 있는 styled-components의 스타일 모두 모은 다음 각각의 스타일에 유니크한 클래스명을 부여
+// 스타일이 충돌하지 않게 클래스명과 스타일을 정리해 이를 _document.tsx가 서버에서 렌더링할 때 React.Context 형태로 제공
+// CSS-in-JS의 스타일을 서버에서 미리 모은 다음 서버 사이드 렌더링에서 한꺼번에 제공해야 올바른 스타일을 적용할 수 있다
+// 이런 과정을 거치지 않는다면 스타일이 브라우저에서 뒤늦게 추가되어 FOUC(flash of unstyled content)라는 스타일이 입혀지지 
+// 않은 날것의 HTML을 잠시간 사용자에게 노출
+// 바벨 대신 swc를 사용한다면 next.config.js에 compiler.styledComponents를 추가하면 된다
+
+// 프로덕션 모드로 빌드 시 SPEEDY_MODE라고 하는 설정을 사용하면
+// HTML에 스타일을 적용하는 대신 자바스크립트를 활용해 CSSOM 트리에 직접 스타일을 넣는다
+// 기존 스타일링 방식보다 훨씬 빠르다
+// 실제 스타일이 어떻게 삽입돼 있는지 확인하고 싶다면 document.styleSheets를 활용하면 된다
+
+// 별도의 바벨 설정 없이 swc와 함께 사용 가능한 CSS-in-JS 라이브러리는 현재 Next.js에서 만든  (Next.js, SWC 조합시 추천)
+// styled-jsx, styled-components, Emotion이 있다
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  compiler: {
+    styledComponents: true,
+  },
+}
+
+module.exports = nextConfig
+
+// 설정 완료 후 결과물
+import styled from 'styled-components'
+
+const ErrorButton = styled.button`
+  color: red;
+  font-size: 16px;
+`
+
+export function Button(){
+  return(
+    <>
+      <ErrorButton type="button">경고</ErrorButton>
+    </>
+  )
+}
+
+// 생략
+<style data-styled="" data-styled-version="5.3.5">
+  .bXqOdA{
+    color: red;
+    font-size: 16px;
+  } /*!sc*/
+  data-styled.g1[id='Button__ErrorButton-sc-8cb2349-0']{
+    content: 'bXqOdA,';
+  } /*!sc*/
+  {/* 생략 */}
+  <button type="button" class="Button__ErrorButton-sc-8cb2349-0 bXqOdA">
+    경고!
+  </button>
+</style>
+
+
+
+// 사용자가 처음 서비스에 접근 시 처리하고 싶은 무언가를 작성할때 _app.tsx에 작성
+import App, {AppContext} from 'next/app'
+import type {AppProps} from 'next/app'
+
+function MyApp({Component, pageProps}: AppProps){
+  return (
+    <>
+      <Component {...pageProps} />
+    </>
+  )
+}
+
+// _app.tsx에 getInitialProps를 추가하려면 반드시 
+// const appProps = await App.getInitialProps(context)를 실행한 뒤 해당 값을 반환해야 한다
+// 이 코드가 없다면 다른 페이지의 getInitialProps가 정상작동하지 않는다
+MyApp.getInitialProps = async (context: AppContext) => {
+  const appProps = await App.getInitialProps(context)
+
+  return appProps
+}
+
+export default MyApp

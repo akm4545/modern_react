@@ -233,3 +233,55 @@ MyApp.getInitialProps = async (context: AppContext) => {
 }
 
 export default MyApp
+
+
+// 해당 코드를 작성하고 라우팅 반복 (애플리케이션 전체 적용됨)
+// 실행 절차
+// 1.가장 먼저 자체 페이지에 getInitialProps가 있는 곳을 방문
+// 로그: [서버] /test/GIP에서 /test/GIP를 요청
+// 2. getServerSideProps가 있는 페이지를 <Link>를 이용해서 방문
+// 로그: [서버] /test/GSPP에서 /_next/data/XBY50vq6_LSP5vdU2XD5n/test/GSSP.json를 요청
+// 3. 다시 1번의 페이즈를 <Link>를 이용해서 방문
+// 로그: [클라이언트] /test/GSPP에서 undefined를 요청
+// 4. 다시 2번의 페이지를 <Link>를 이용해서 방문
+// 로그: [클라이언트] /test/GSPP에서 /_next/data/XBY50vq6_LSP5vdU2XD5n/test/GSSP.json를 요청
+
+// 페이지 방문 최초 시점 1번은 서버 사이드 렌더링이 전체적으로 작동해야 해서 페이지 전체 요청
+// 이후 클라이언트 라우팅을 수행하기 위해 페이지가 getSErverSiceProps와 같은 서버 관련 로직이 있다 하더라도 전체 페이지를 가져오는 것이 아닌
+// 해당 페이지 getServerSideProps 결과를 json파일만 요청해서 가져옴
+MyApp.getInitialProps = async (context: AppContext) => {
+  const appProps = await App.getInitialProps(context)
+  const isServer = Boolean(context.ctx.req)
+
+  console.log(
+    `[${isServer ? '서버' : '클라이언트'}] ${context.router.pathname}에서 ${context.ctx?.req?.url}를 요청함.`,
+  )
+
+  return appProps
+}
+
+
+// 서버 최초 진입시 작업 처리 예제
+MyApp.getInitialProps = async (context: AppContext) => {
+  const appProps = await App.getInitialProps(context)
+  const {
+    ctx: { req },
+    router: { pathname },
+  } = context
+
+  // 클라이언트 사이드 렌더링이 아닐 시 
+  // req가 있다면 서버로 오는 요청
+  // req.url이 /_next로 시작하지 않는다면 이는 클라이언트 렌더링으로 인해 발생한 getServerSideProps 요청이 아님
+  // pathname이 에러 페이지가 아니라면 정상 접근
+  // 위 조건을 만족한다면 최초 서버 사이드 렌더링을 어느 정보 보장 가능
+  // 여기에서 userAgent 확인이나 사용자 정보와 같은 애플리케이션 전역에서 걸쳐 사용해야 하는 정보 등을 호출하는 작업을 수행할 수 있다
+  if(
+    req && 
+    !req.url?.startsWith('/_next') &&
+    !['/500', '/404', '/_error'].includes(pathname)
+  ) {
+    doSomethingOnlyOnce()
+  }
+
+  return appProps
+}

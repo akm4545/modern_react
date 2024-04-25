@@ -65,3 +65,21 @@ export default function RootLayout({
     </html>
   );
 }
+
+// 전역 스타일
+// CSS Reset = 브라우저 기본 제공 스타일 초기화 후 애플리케이션 전체에 공통으로 적용하는 스타일
+// next13 이전 기준 _app.tsx에 필요 스타일 import 
+// 글로벌 스타일은 다른 페이지, 컴포넌트와 충돌할 수 있으므로 반드시 _app.tsx에서 제한적으로 작성 필요
+
+// 예제
+//import type { AppProps } from "next/app";
+
+//적용하고 싶은 글로벌 스타일 
+//import '../style.css'
+
+// 혹은 node_modules에서 바로 꺼내올 수도 있다
+// import 'normalize.css/normalize.css'
+
+// export default function MyApp({ Component, pageProps }: AppProps){
+//   return <Component {...pageProps} />
+// }

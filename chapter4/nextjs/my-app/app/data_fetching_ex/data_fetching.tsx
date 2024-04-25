@@ -169,3 +169,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         props: { post },
     }
 }
+
+// getInitialProps -> /pages/todo/[id].tsx 파일에 작성
+
+// nextjs 13 기준 위의 함수들 작동 x

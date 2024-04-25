@@ -38,19 +38,19 @@ export default function HiAll({ props: serverProps }: { props: string[] }){
   )
 }
 
-export const getServerSideProps = (context: NextPageContext) => {
-  // 서버에서 값을 가져오는 법
-  const {
-    query: { props }, // string | stirng[] | undefined
-  } = context
+// export const getServerSideProps = (context: NextPageContext) => {
+//   // 서버에서 값을 가져오는 법
+//   const {
+//     query: { props }, // string | stirng[] | undefined
+//   } = context
 
-  // 서버에서 클라이언트로 값을 내려주는 것은 이후에 설명
-  return {
-    props: {
-      props,
-    },
-  }
-}
+//   // 서버에서 클라이언트로 값을 내려주는 것은 이후에 설명
+//   return {
+//     props: {
+//       props,
+//     },
+//   }
+// }
 
 // 위 페이지를 다음과 같은 주소로 접근하면 props에 다음과 같은 값이 담긴다
 // /hi/1:['1']

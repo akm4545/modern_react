@@ -19,3 +19,42 @@
 // /pages/hi/[...props].tsx: 전개연산자와 동일 /hi 하위의 모든 주소가 여기로 온다
 // localhost:3000/hi/hello, localhost:3000/hi/hello/world, localhost:3000/hi/hello/world/foo 등이 여기로 온다
 // [...props] 값은 props라는 변수에 배열로 온다
+
+import type { NextPage } from "next";
+import Link from "next/link";
+
+// next/link = Next.js에서 제공하는 라우팅 컴포넌트 <a />태그와 비슷한 동작을 한다
+// <a /> 태그로 이동 시 네트워크에 hello라는 이름의 문서를 요청 
+// webpack, framework, main, hello 등 페이지를 만드는데 필요한 리소스를 처음부터 다 가져온다
+// hello의 렌더링이 어디서 일어났는지 판단하기 위한 console.log도 서버와 클라이언트에 각각 동시에 기로된다
+// 즉 서버에서 렌더링을 수행하고 클라이언트에서 hydrate하는 과정에서 한 번 더 실행
+
+// next/link로 이동시 hello.js만 받아온다
+// 즉 hello.js는 hello 페이지를 위한 자바스크립트이고 서버 사이드 렌더링이 아닌 클라이언트에서 필요한 자바스크립트만 불러온 뒤 라우팅하는 
+// 클라이언트 라우팅/렌더링 방식으로 작동
+// Next.js는 서버 사이드 렌더링의 장점, 즉 사용자가 빠르게 볼 수 있는 최초 페이지를 제공한다는 점과 싱글 페이지 애플리케이션의 장점인 자연스러운
+// 라우팅이라는 두 가지 장점을 모두 살리기 위해 이러한 방식으로 작동한다
+
+// 이러한 Next.js의 장점을 적극 살리기 위해서는 내부 페이지 이동 시 다음과 같은 규칙을 지켜야 한다
+// <a> 대신 <Link> 사용
+// window.loaction.push 대신 router.push를 사용
+
+const Home: NextPage = () => {
+  return (
+    <ul>
+      <li>
+        {/* next의 eslint 룰을 잠시 끄기 위해 추가 */}
+        {/* eslint-disable-next-line */}
+        <a href="/hello">A 태그로 이동</a>
+      </li>
+      <li>
+        {/* 차이를 극적으로 보여주기 위해 해당 페이지의 리소스를 미리 가져오는 prefetch를 잠시 꺼두었다 */}
+        <Link prefetch={false} href="/hello">
+          next/link로 이동
+        </Link>
+      </li>
+    </ul>
+  )
+}
+
+export default Home

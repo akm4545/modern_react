@@ -289,6 +289,11 @@
     const fetcher = (url) => fetch(url).then((res) => res.json())
 
     export default function App() {
+
+        // useSWR 
+        // 첫번째 인수 = 조회할 API 주소
+        // 두번째 인수 = 조회에 사용될 fetch
+        // 첫번재 인수는 키로도 사용 이후 다른 곳에도 동일한 키로 호출하면 재조회를 하지 않고 useSWR이 관리하는 캐시의 값을 활용
         const { data, error } = useSWR(
             'https://api.github.com/repos/vercel/swr',
             fetcher,
@@ -303,4 +308,43 @@
             </div>
         )
     }
+
+    // 기존의 상태관리 라이브러리보다는 제한적인 목적으로 일반적인 형태와는 다르다는 점만 제외하면 SWR이나 React Query도 상태관리 라이브러리의
+    // 일종으로 볼 수 있다
+    // 실제 이 두 라이브러리를 사용해 보면 생각보다 애플리케이션의 많은 부분에서 상태를 관리하는 코드가 사라진다
+}
+
+{
+    // Recoil, Zustand, Jotai, Valtio
+    // 훅이라는 새로운 패러다임의 등장에 따라 훅을 활용해 상태를 가져오거나 관리할 수 있는 라이브러리가 등장
+
+    // Recoil
+    const counter = atom({ key: 'count', default: 0 })
+    const todoList = useRecoilValue(counter)
+
+    // Jotai
+    const countAtom = atom(0)
+    const [count, setCount] = useAtom(countAtom)
+
+    // Zustand
+    const useCounterStore = create((set) => ({
+        count: 0,
+        increase: () => set((state) => ({count: state.count + 1 })),
+    }))
+    const count = useCounterStore((state) => state.count)
+
+    // Valtio
+    const state = proxy({ count: 0 })
+    const snap = useSnapshot(state)
+    state.count++
+
+    // 요즘 떠오르는 많은 상태 관리 라이브러리는 기존의 리덕스와는 차이점이 있음
+    // 훅을 활용해 작은 크기의 상태를 효율적으로 관리
+    // 위의 상태관리 라이브러리는 모두 peerDependencies로 리액트 16.8 버전 이상을 요구
+    // 리덕스나 MobX도 react-redux나 mobx-react-lite등을 설치하면 동일하게 훅으로 상태를 가져올 수 있지만 위 라이브러리는 애초에
+    // 리액트와의 연동을 전제로 작동해 별도로 다른 라이브러리를 설치하지 않아도 된다
+
+    // 기존의 상태 관리 라이브러리의 아쉬운 점으로 지적받는 전역 상태 관리 패러다임에서 벗어나 
+    // 개발자가 원하는 만큼의 상태를 지역적으로 관리하는 것을 가능하게 만들었고 훅을 지원함으로써 함수 컴포넌트에서 손쉽게 사용할 수 있다는 
+    // 장점이 있다
 }

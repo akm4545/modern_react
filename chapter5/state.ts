@@ -100,6 +100,10 @@
     // 웹페이지를 선언적으로 작성하기 위한 언어
 
     // Elm을 이용해 HTML을 작성한 예제
+    // model, update, view 세 가지가 Elm 아키텍처의 핵심이다
+    // 모델(model): 애플리케이션의 상태를 의미 여기서는 Model을 의미하며 초깃값으로는 0이 주어졌다
+    // 뷰(view): 모델을 표현하는 HTML을 말한다. 여기서는 Model을 인수로 받아서 HTML을 표현한다
+    // 업데이트(update): 모델을 수정하는 방식을 말한다 Increment, Decremnet를 선언해 각각의 방식이 어떻게 모델을 수정하는지 나타냈다
     module Main exposing (..)
 
     import Browser
@@ -145,4 +149,158 @@
         <div>2</div>
         <button>+</button>
     </div>
+
+    // Elm은 Flux와 마찬가지로 뎅터 흐름을 세 가지로 분류하고 단방향으로 강제해 웹 애플리케이션의 상태를 안정적으로 관리하고자 노력했다
+    // 리덕스는 Elm 아키텍처의 영향을 받아 작성됐다
+
+    // 리덕스는 하나의 상태 객체를 스토어에 저장 
+    // 객체 업데이트 작업을 디스패치해 업데이트 수행
+    // 이러한 작업을 reducer 함수로 발생 완전히 새로운 복사본을 반환한 다음 애플리케이션에 이 새롭게 만들어진 상태를 전파
+
+    // 하나의 글로벌 상태 객체를 통해 이 상태를 하위 컴포넌트에 전파할 수 있기 때문에 props를 깊이 전파해야 하는 prop 내려주기 문제를 해결
+    // 스토어가 필요한 컴포넌트라면 단지 connect만 쓰면 스토어 접근 가능
+
+    // 리덕스는 단순히 하나의 상태를 바꾸고 싶어도 해야 할 일이 너무 많았다
+    // 액션 타입을 선언하고 이 액션을 수행할 creator, 함수를 만들어야 한다
+    // 그리고 dispatcher와 selector도 필요하고 새로운 상태가 기존의 리듀서 내부에서 어떤 식으로 변경돼야 할지, 혹은 새로 만들어야 할지도
+    // 새로 정의해야 했다
+}
+
+{   
+    // prop 내려주기를 방지하기위한 상태 주입
+    // 리액트 16.3 버전 이전에 존재했던 context와 getChildContext() 예제
+    // 문제점
+    // 1. 상위 컴포넌트가 렌더링되면 getChildContext도 호출됨과 동시에 shouldComponentUpdate가 항상 true를 반환해 불필요하게 렌더링이 일어남
+    // 2. getChildContext를 사용하기 위해서는 context를 인수로 받아야 하는데 이 때문에 컴포넌트와 결합도가 높아짐
+    class MyComponent extends React.Component {
+        static childContextTypes = {
+            name: PropTypes.string,
+            age: PropTypes.number
+        }
+
+        getChildContext(){
+            return {
+                name: 'foo',
+                age: 30,
+            }
+        }
+
+        render() {
+            return <ChildComponent />
+        }
+    }
+
+    function ChildComponent(props, context){
+        return (
+            <div>
+                <p>Name: {context.name}</p>
+                <p>Age: {context.age}</p>
+            </div>
+        )
+    }
+
+    ChildComponent.contextTypes = {
+        name: PropTypes.string,
+        age: PropTypes.number,
+    }
+}
+
+{
+    // 이런 단점을 해결하기 위해 16.3 버전에서 새로운 context 출시
+    // Context API 예제
+
+    // 부모 컴포넌트 MyApp에 상태 선언
+    // 이를 Context로 주입 (Context.Provider)
+    // 자식 컴포넌트에서 사용 (Context.Consumer)
+    type Counter = {
+        count: number
+    }
+
+    const CounterContext = createContext<Counter | undefined>(undefined)
+
+    class CounterComponent extends Component{
+        render(){
+            return (
+                <CounterContext.Consumer>
+                    {(state) => <p>{state?.count}</p>}
+                </CounterContext.Consumer>
+            )
+        }
+    }
+
+    class DummyParent extends Component {
+        render() {
+            return (
+                <>
+                    <CounterComponent />
+                </>
+            )
+        }
+    }
+
+    export default class MyApp extends Component<{}, Counter> {
+        state = { count: 0 }
+
+        componentDidMount(){
+            this.setState({ count: 1 })
+        }
+
+        handleClick = () => {
+            this.setState((state) => ({ count: state.count + 1 }))
+        }
+
+        render() {
+            return (
+                <CounterContext.Provider value={thi.state}>
+                    <button onClick={this.handleClick}>+</button>
+                    <DummyParent />
+                </CounterContext.Provider>
+            )
+        }
+    }
+}
+
+{
+    // 훅 / React Query / SWR
+    
+    // 훅의 등장으로 state를 매우 손쉽게 재사용 가능해짐
+    // useCounter는 단순히 count state와 이를 1씩 올려주는 함수로 구성
+    // 내부적으로 관리하고 있는 state(count)도 있으며 이를 필요한 곳에서 재사용 가능 (return {count, increase})
+    function useCounter() {
+        const [count, setCount] = useState(0)
+
+        function increase() {
+            setCount((prev) => prev + 1)
+        }
+
+        return {count, increase}
+    }
+
+    // 이러한 훅과 state의 등장으로 새로운 상태 관리 React Query와 SWR이 등장
+    // 두 라이브러리 모두 외부에서 데이터를 불러오는 fetch를 관리하는데 특화된 라이브러리
+    // API에 대한 생태르 관리하고 있기 떄문에 HTTP 요청에 특화된 상태 관리 라이브러리
+}
+
+{
+    // SWR 응용 코드
+    import React from 'react'
+    import useSWR from 'swr'
+
+    const fetcher = (url) => fetch(url).then((res) => res.json())
+
+    export default function App() {
+        const { data, error } = useSWR(
+            'https://api.github.com/repos/vercel/swr',
+            fetcher,
+        )
+
+        if(error) return 'An error has occurred.'
+        if(!data) return 'Loading...'
+
+        return (
+            <div>
+                <p>{JSON.stringify(data)}</p>
+            </div>
+        )
+    }
 }

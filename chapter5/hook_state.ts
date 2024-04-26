@@ -289,3 +289,449 @@
         return { get, set, subscribe }
     }
 }
+
+{
+    // createStore로 만들어지 store의 값을 참조하고 이 값의 변화에 따라 렌더링을 유도할 사용자 정의 훅
+
+    // 훅의 인수로 사용할 store를 받음
+    export const useStore = <State extends unknown>(store: Store<State>) => {
+        // store.get()을 호출해 스토어의 초깃값으로 useState를 만듦
+        const [state, setState] = useState<State>(() => store.get())
+
+        // store가 변할때 마다 setState를 실행하는 코드를 subscribe에 등록
+        // 클린업 함수로 unsubscribe 함수 반환
+        // useEffect의 작동이 끝난 이후에는 해당 함수를 제거해 callback이 계속 쌓이는 현상 방지
+        useEffect(() => {
+            const unsubscribe = store.subscribe(() => {
+                setState(store.get())
+            })
+
+            return unsubscribe
+        }, [store])
+
+        return [state, store.set] as const
+    }
+}
+
+{
+    // 위의 훅을 사용하는 코드
+    const store = createStore({ count: 0 })
+
+    function Counter1() {
+        const [state, setState] = useStore(store)
+
+        function handleClick() {
+            setState((prev) => ({ count: prev.count + 1 }))
+        }
+
+        return (
+            <>
+                <h3>Counter1: {state.count}</h3>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    function Counter2() {
+        const [state, setState] = useStore(store)
+
+        function handleClick() {
+            setState((prev) => ({ count: prev.count + 1 }))
+        }
+
+        return (
+            <>
+                <h3>Counter2: {state.count}</h3>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    export default function App() {
+        return (
+            <div className="App">
+                <Counter1 />
+                <Counter2 />
+            </div>
+        )
+    }
+
+    // 이 훅의 경우 원시값이라면 상관없지만 객체라면 객체에서 일부값이 변경될때
+    // store의 값이 바뀌면 무조건 useState를 실행하므로 어떤 값이 바뀌든지 간에 리렌더링이 발생하게 된다
+}
+
+{
+    // 위의 문제점을 해결한 코드
+    // useStore를 기반으로 만들어졌지만 두 번째 인수로 selector라는 함수를 받는다
+    // 이 함수는 store의 상태에서 어떤 값을 가져올지 정의하는 함수
+    // 이 함수를 활용해 store.get()을 수행
+    // useState는 값이 변경되지 않으면 리렌더링을 수행하지 않으므로 store의 값이 변경됐다 하더라도
+    // selector(store.get())이 변경되지 않는다면 리렌더링 x
+    export const useStoreSelector = <State extends unknown, Value extends unknown> (
+        store: Store<State>,
+        selector: (state: State) => Value,
+    ) => {
+        const [state, setState] = useState(() => selector(store.get()))
+
+        useEffect(() => {
+            const unsubscribe = store.subscribe(() => {
+                const value = selector(store.get())
+                setState(value)
+            })
+
+            return unsubscribe
+        }, [store, selector])
+
+        return state
+    }
+}
+
+{
+    // useStoreSelector 훅 사용 예제
+    const store = createStore({ count: 0, text: 'hi' })
+
+    function Counter(){
+        const counter = useStoreSelector(
+            store,
+            // selector로 state의 count를 조회하는 함수 전달
+            // 즉 useStoreSelector 훅에서 store.get() 의 결과물이 아래 useCallback 함수의 state로 들어감
+            useCallback((state) => state.count, []),
+        )
+
+        function handleClick() {
+            // 객체 복사
+            store.set((prev) => ({ ...prev, count: prev.count + 1 }))
+        }
+
+        useEffect(() => {
+            console.log('Counter Rendered')
+        })
+
+        return (
+            <>
+                <h3>{counter}</h3>
+                <button onClick={handleClick}>+</button>
+            </>
+        )
+    }
+
+    const textSelector = (state: ReturnType<typeof store.get>) => state.text
+
+    function TextEditor() {
+        const text = useStoreSelector(store, textSelector)
+
+        useEffect(() => {
+            console.log('TextEditor Rendered')
+        })
+
+        function handleChange(e: ChangeEvent<HTMLInputElement>) {
+            store.set((prev) => ({ ...prev, text: e.target.value }))
+        }
+
+        return (
+            <>
+                <h3>{text}</h3>
+                <input value={text} onChange={handleChange} />
+            </>
+        )
+    }
+
+    // selector를 컴포넌트 밖에 선언하거나 아니면 useCallback을 사용해 참조를 고정해야 한다
+    // 리렌더링시 함수가 계속 재생성되어 store의 subscribe를 반복정으로 수행하기 떄문
+}
+
+{
+    // 이러한 방식으로 구현된 훅이 페이스북 팀에서 만든 useSubscription이다
+    function NewCounter() {
+        const subscription = useMemo(
+            () => ({
+                // 스토어의 모든 값으로 설정해 뒀지만 selector 예제와 마찬가지로
+                // 특정한 값에서만 가져오는 것도 가능하다
+                getCurrentValue: () => store.get(),
+                subscribe: (callback: () => void) => {
+                    const unsubscribe = store.subscribe(callback)
+                    return () => unsubscribe()
+                },
+            }),
+            [],
+        )
+
+        const value = useSubscription(subscription)
+
+        return <>{JSON.stringify(value)}</>
+    }
+}
+
+{
+    // 타입스크립트로 흉내 낸 useSubscription
+    import {useDebugValue, useEffect, useState} from 'react'
+
+    export function useSubscription<Value>({
+        getCurrentValue,
+        subscribe,
+    }: {
+        getCurrentValue: () => Value,
+        subscribe: (callback: Function) => () => void
+    }): Value {
+        // 현재값을 가져오는 함수, subscribe, 그리고 현재값을 모두 한꺼번에
+        // 객체로 저장해 준다
+        const [state, setState] = useState(() => ({
+            getCurrentValue,
+            subscribe,
+            value: getCurrentValue(),
+        }))
+
+        // 현재 가져올 값을 따로 변수에 저장해 둔다
+        let valueToReturn = state.value
+
+        // useState에 저장돼 있는 최신값을 가져오는 함수 getCurrentValue와
+        // 함수의 인수로 받은 getCurrentValue가 다르거나 
+        // useState에 저장돼 있는 subscribe와 함수의 인수로 받은 subscribe가 다르면
+        if(
+            state.getCurrentValue !== getCurrentValue ||
+            state.subscribe !== subscribe
+        ) {
+            // 어디선가 두 함수의 참조가 바뀐 것이므로 이 바뀐 참조를 존중해
+            // 반환 예정인 현재값을 함수의 인수의 getter로 다시 실행
+            valueToReturn = getCurrentValue()
+
+            // 참조가 변경됐으므로 이 값을 일괄 업데이트한다
+            setState({
+                getCurrentValue,
+                subscribe,
+                value: valueToReturn
+            })
+        }
+
+        // 디버깅을 위해 현재 반환할 값을 리액트 개발자 모드로 기록
+        useDebugValue(valueToReturn)
+
+        // useEffect 실행 시 위에서 실행된 if문 덕분에 getCurrentValue와
+        // subscribe의 참조를 최신 상태로 유지
+
+        // 이 두 함수를 의존성으로 두고 다음 useEffect 실행
+        useEffect(() => {
+            // subscribe가 취소됐는지 여부
+            let didUnsubscribe = false
+
+            // 값의 업데이트가 일어났는지 확인하는 함수
+            const checkForUpdates = () => {
+                // 이미 subscribe가 취소됐다면 아무것도 하지 않는다
+                if (didUnsubscribe){
+                    return
+                }
+
+                // 현재 값을 가져온다
+                const value = getCurrentValue()
+
+                // useSubscription을 사용하는 컴포넌트의 렌더링을 일으키는 코드
+                setState((prevState) => {
+                    // 이전과 비교해 단순히 함수의 차이만 존재한다면 이전 값을 반환
+                    if(
+                        prevState.getCurrentValue !== getCurrentValue ||
+                        prevState.subscribe !== subscribe
+                    ){
+                        return prevState
+                    }
+
+                    // 이전 값과 현재 값이 같다면 이전 값을 반환
+                    if(prevState.value === value) {
+                        return prevState
+                    }
+
+                    // 이전 prevState와 현재 값을 합성해 새로운 객체를 만들고 렌더링을 일으킨다
+                    return { ...prevState, value}
+                })
+            }
+
+            // 콜백 목록에 변경 여부를 체크하는 함수를 등록한다
+            const unsubscribe = subscribe(checkForUpdates)
+
+            checkForUpdates()
+
+            return () => {
+                didUnsubscribe = true
+                unsubscribe()
+            }
+        }, [getCurrentValue, subscribe])
+
+        return valueToReturn
+    }
+}
+
+{
+    // useState 와 Context 동시 사용
+    // useStore, useStoreSelector 훅을 활용해 useState로 관리하지 않는 외부 상태값을 읽어오고 리렌더링까지 일으켜서
+    // 마치 상태 관리 라이브러리처럼 사용하는 훅에도 한가지 단점이 있다
+    // 반드시 하나의 스토어만 가지게 된다
+    // 하나의 스토어는 전역 변수처럼 작동하게 되어 동일한 형태의 여러 개의 스토어를 가질 수 없게 된다
+}
+
+{
+    // createStore를 이용해 동일한 타입으로 스토어를 여러 개 만드는 예제
+
+    // 이 방법은 완벽하지도 않고 매우 번거롭다
+    // 필요시 마다 생성해야 하고 훅은 스토어에 의존적인 1:1 관계를 맺고 있으므로 스토어를 만들 때마다 해당 스토어에 
+    // 의존적인 useStore와 같은 훅을 동일한 개수로 생성해야 한다
+    // 훅을 하나씩 만들었다 하더라도 이 훅이 어느 스토어에서 사용 가능한지 가늠하려면 오직 훅의 이름이나 
+    // 스토어의 이름에 의지해야 한다는 어려움이 있다
+    const store1 = createStore({ count: 0 })
+    const store2 = createStore({ count: 0 })
+    const store3 = createStore({ count: 0 })
+    // ...
+}
+
+{
+    // 이 문제를 해결하는 좋은 방법은 Context를 활용하는 것이다
+    // Context를 활용해 해당 스토어를 하위 컴포넌트에 주입한다면 컴포넌트에서는 자신이 주입된 스토어에서만 접근할 수 있게 된다
+    
+    // 예제
+    // Context를 생성하면 자동으로 스토어도 함께 생성
+    
+    // 어떤 Context를 만들지 타입과 함께 정의
+    export const CounterStoreContext = createContext<Store<CounterStore>>(
+        createStore<CounterStore>({ count: 0, text: 'hello' }),
+    )
+
+    // 정의된 Context를 사용하기 위해 CounterStoreProvider를 정의
+    export const CounterStoreProvider = ({
+        initialState,
+        children,
+    }: PropsWithChildren<{
+        initialState: CounterStore
+    }>) => {
+        // storeRef를 사용해서 스토어 제공
+        // Provider로 넘기는 props가 불필요하게 변경돼서 리렌더링 되는것을 막기 위함
+        // useRef를 사용했기 때문에 최초 렌더링에서만 스토어를 만들어서 값을 내려주게 된다
+        const storeRef = useRef<Store<CounterStore>>()
+
+        // 스토어를 생성한 적이 없다면 최초에 한 번 생성
+        if(!storeRef.current){
+            storeRef.current = createStore(initialState)
+        }
+
+        return (
+            <CounterStoreContext.Provider value={storeRef.current}>
+                {children}
+            </CounterStore.Provider>
+        )
+    }
+}
+
+{
+    // Context에서 내려주는 값을 사용하기 위해서는 useStore나 useStoreSelector 대신에 다른 접근이 필요
+    // 기존의 두 훅은 스토어에 직접 접근 방식이지만 이제 Context에서 제공하는 스토어에 접근해야 하기 떄문
+    // useContext를 사용해 스토어에 접근할 수 있는 새로운 훅이 필요
+    export const useCounterContextSelector = <State extends unknown>(
+        selector: (state: CounterStore) => state,
+    ) => {
+        // 스토어 접근을 위해 useContext 사용
+        // 즉 스토어에서 값을 찾는 것이 아니라 Context.Provider에서 제공된 스토어를 찾게 만든다
+        const store = useContext(CounterStoreContext)
+
+        // useStoreSelector를 사용해도 동일하다
+        // 리액트에서 제공하는 useSubscription 사용 
+        const subscription = useSubscription(
+            useMemo(
+                () => ({
+                    getCurrentValue: () => selector(store.get())
+                    subscription: store.subscribe,
+                }),
+                [store, selector],
+            ),
+        )
+
+        return [subscription, store.set] as const
+    }
+}
+
+{
+    // 새로 만든 훅과 Context를 사용하는 예제
+    const ContextCounter = () => {
+        const id = useId()
+
+        const [counter, setStore] = useCounterContextSelector(
+            useCallback((state: CounterStore) => state.count, []),
+        )
+
+        function handleClick() {
+            setStore((prev) => ({ ...prev, count: prev.count + 1 }))
+        }
+
+        useEffect(() => {
+            console.log(`${id} Counter Rendered`)
+        })
+
+        return (
+            <div>
+                {counter} <button onClick={handleClick}>+</button>
+            </div>
+        )
+    }
+
+    const ContextInput = () => {
+        const id = useId()
+        const [text, setStore] = useCounterContextSelector(
+            useCallback((state: CounterStore) => state.text, []),
+        )
+
+        function handleChange(e: ChangeEvent<HTMLInputElement>){
+            setStore((prev) => ({ ...prev, text: e.target.value }))
+        }
+
+        useEffect(() => {
+            console.log(`${id} Counter Rendered`)
+        })
+
+        return(
+            <div>
+                <input value={text} onChange={handleChange} />
+            </div>
+        )
+    }
+
+    export default function App() {
+        return (
+            <>
+                // 0
+                <ContextCounter />
+                //hi
+                <ContextInput />
+                <CounterStoreProvider initialState={{ count: 10, text: 'hello' }}>
+                    // 10
+                    <ContextCounter />
+                    // hello
+                    <ContextInput />
+                    <CounterStoreProvider initialState={{ count: 20, text: 'welcome' }}>
+                        // 20
+                        <ContextCounter />
+                        // welcome
+                        <ContextInput />
+                    </CounterStoreProvider>
+                </CounterStoreProvider>
+            </>
+        )
+    }
+
+    // 컴포넌트 트리 최상에 있는 ContextCounter와 ContextInput 은 부모에 CounterStoreProvider 가 존재하지 않아도 각각 초깃값을 가져옴
+    // 앞서 CounterStoreContext를 만들 때 초깃값으로 인수를 넘겨줬는데 이 인수는 Provider가 없을 경우 사용하게 된다
+    // 즉 Provider가 없는 상황에서는 앞선 스토어 예제와 마찬가지로 전역 생성 스토어를 바라보게 된다
+
+    // 두 번째 ContextCounter와 ContextInput은 count: 10, text: 'hello'로 초기화된 CounterStoreProvider 내부에 있다
+
+    // 세 번째 ContextCounter와 ContextInput은 Provider를 하나 더 가지고 있는데 이 Provider는 count: 20, text: 'welcome'으로 초기화돼있다
+    // Context는 가장 가까운 Provider를 참조
+
+    // 이렇게 작성한 코드로 인해 스토어를 사용하는 컴포넌트는 해당 상태가 어느 스토어에서 온 상태인지 신경 쓰지 않아도 된다
+    // 단지 해당 스토어를 기반으로 어떤 값을 보여줄지만 고민하면 되므로 좀 더 편리하게 코드를 작성할 수 있다
+    // Context와 Provider를 관리하는 부모 컴포넌트의 입장에서는 자신이 자식 컴포넌트에 따라 보여주고 싶은 데이터를 Context로 잘 격리하기만
+    // 하면 된다
+    // 이처럼 부모, 자식 컴포넌트의 책임과 역할을 이름이 아닌 명시적인 코드로 나눌 수 있어 코드 작성이 한결 용이해진다
+}
+
+{
+    // 현재 리액트 생태계에는 많은 상태 관리 라이브러리가 있지만 이것들이 작동하는 방식은 다음과 같다
+    // useState, useReducer가 가지고 있는 한계, 컴포넌트 내부에서만 사용할 수 있는 지역 상태라는 점을 극복하기 위해
+    // 외부 어딘가에 상태를 둔다 이는 컴포넌트 최상단 내지는 상태가 필요한 부모가 될 수도 있고 격리된 자바스크립트 스코프 어딘가일 수도있다
+    // 이 외부의 상태 변경을 각자의 방식으로 감지해 컴포넌트의 렌더링을 일으킨다
+}

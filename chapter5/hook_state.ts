@@ -841,9 +841,173 @@
 
 {
     // notifyComponents 구조
+    // store, 상태를 전파할 storeState를 인수로 받는다
     function notifyComponents(
         store: Store,
         storeState: StoreState,
-         
-    )
+        treeState: TreeState, 
+    ): void {
+        // 해당 스토어를 사용하고 있는 하위 의존성 검색
+        const dependentNodes = getDownstreamNodes(
+            store,
+            treeState,
+            treeState,dirtyAtoms,
+        )
+
+        // 콜백 실행
+        for(const key of dependentNodes){
+            const comps = storeState.nodeToComponentSubscriptions.get(key)
+
+            if(comps){
+                for (const [_subId, [_debugName, callback]] of comps){
+                    callback(treeState)
+                }
+            }
+        }
+    }   
+
+    // Recoil의 상태값은 RecoilRoot로 생성된 Context의 스토어에 저장
+    // 스토어의 상태값에 접근할 수 있는 함수들이 있으며 이 함수를 활용해 상태값에 접근하거나 상태값을 변경
+    // 값의 변경이 발생하면 이를 참조하는 하위 컴포넌트에 알림
+}
+
+{
+    // atom
+    // Recoil의 최소 상태 단위
+    // atom 구조 선언
+    type Statement = {
+        name: string,
+        amount: number
+    }
+
+    const InitialStatements: Array<Statement> = [
+        { name: '과자', amount: -500 },
+        { name: '용돈', amount: 10000 },
+        { name: '네이버페이충전', amount: -5000 },
+    ]
+
+    // Atom 선언
+    const statementAtom = atom<Array<Statement>>({
+        key: 'statements',
+        defualt: InitialStatements,
+    })
+
+    // atom은 key 값을 필수로 가지며 이 키는 다른 atom과 구별하는 식별자가 되는 필수 값
+    // 애플리케이션 내부에서 유일한 값이어야 하기 때문에 atom과 selector를 만들 때 반드시 주의를 기울여야 한다
+    // default는 atom의 초깃값을 의미 
+}
+
+{
+    // atom의 값을 컴포넌트에서 읽어오고 이 값의 변화에 따라 컴포넌트를 리렌더링 하는 훅
+
+    // useRecoilValue
+    // atom의 값을 읽어오는 훅
+    function Statements() {
+        const statements = useRecoilValue(statementsAtom)
+
+        return (
+            <>something</>
+            // ...
+        )
+    }
+
+    // useRecoilValue 훅의 구현
+    function useRecoilValue<T>(recoilValue: RecoilValue<T>): T {
+        if (__DEV__){
+            validateRecoilValue(recoilValue, 'useRecoilValue')
+        }
+
+        const storeRef = useStoreRef()
+        const loadable = useRecoilValueLoadable(recoilValue)
+        const handleLoadable(loadable, recoilValue, storeRef)
+    }
+
+    // ...
+        
+    // useRecoilValueLoadable
+    // 외부의 값을 구독해 렌더링을 강제로 일으키는 원리로 작동
+    function useRecoilValueLoadable_LEGACY<T>(
+        recoilValue: RecoilValue<T>,
+    ): Loadable<T> {
+        const storeRef = useStoreRef()
+        const [, forceUpdate] = useState([])
+        const componentName = useComponentName()
+
+        // 현재 Recoil이 가지고 있는 상태값을 가지고 있는 함수인 loadable을 반환하는 함수
+        // 이 값을 이전값과 비교해 렌더링이 필요한지 확인하기 위해 렌더링을 일으키지 않으면서 값을 
+        // 저장할 수 있는 ref에 매번 저장
+        const getLoadable = useCallback(() => {
+            if(__DEV__){
+                recoilComponentGetRecoilValueCount_FOR_TESTING.current++
+            }
+
+            const store = storeRef.current
+            const storeState = store.getState()
+            const treeState = reactMode().early
+                ? storeState.nextTree ?? storeState.currentTree
+                : storeState.currentTree
+            
+                return getRecoilValueAsLoadable(store, recoilValue, treeState)
+        }, [storeRef, recoilValue])
+
+        const loadable = getLoadable()
+        const prevLoadableRef = useRef(loadable)
+        useEffect(() => {
+            prevLoadableRef.current = loadable
+        })
+
+        // useEffect를 통해 recoilValue가 변경됐을 때 forceUpdate를 호출해 렌더링을 강제
+        useEffect(() => {
+            const store = storeRef.current
+            const storeState = store.getState()
+
+            // 현재 recoil의 값을 구독하는 함수
+            const subscription = subscribeToRecoilValue(
+                store,
+                recoilValue,
+                (_state) => {
+                    if(!gkx('recoil_suppress_rerender_in_callback')){
+                        return forceUpdate([])
+                    }
+
+                    const newLoadable = getLoadable()
+                    // is는 두 객체가 같은지 비교하고 다르면 렌더링 유도
+                    if(!prevLoadableRef.current?.is(newLoadable)){
+                        forceUpdate(newLoadable)
+                    }
+                    prevLoadableRef.current = newLoadable
+                },
+                componentName,
+            )
+
+            if(storeState.nextTree){
+                store.getState().queuedComponentCallbacks_DEPRECATED.push(() => {
+                    prevLoadableRef.current = null
+                    forceUpdate([])
+                })
+            }else{
+                if(!gkx('recoil_suppress_rerender_in_callback')){
+                    return forceUpdate([])
+                }
+
+                const newLoadable = getLoadable()
+
+                // 값을 비교해서 값이 다르면 forceUpdate를 실행
+                if(!prevLoadableRef.current?.is(newLoadable)){
+                    forceUpdate(newLoadable)
+                }
+
+                prevLoadableRef.current = newLoadable
+            }
+
+            // 클린업 함수에 subscribe를 해체하는 함수를 반환
+            return subscription.release
+        }, [componentName, getLoadable, recoilValue, storeRef])
+
+        return loadable
+    }
+}
+
+{
+    
 }

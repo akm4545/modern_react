@@ -735,3 +735,115 @@
     // 외부 어딘가에 상태를 둔다 이는 컴포넌트 최상단 내지는 상태가 필요한 부모가 될 수도 있고 격리된 자바스크립트 스코프 어딘가일 수도있다
     // 이 외부의 상태 변경을 각자의 방식으로 감지해 컴포넌트의 렌더링을 일으킨다
 }
+
+{
+    // 상태관리 라이브러리 Recoil, Jotai, Zustand
+    // Recoil, Jotai = Context와 Provider 그리고 훅을 기반으로 가능한 작은 상태를 효율적으로 관리하는 데 초점
+    // Zustand = 리덕스와 비슷하게 하나의 큰 스토어를 기반으로 상태를 관리하는 라이브러리 해당 스토어의 상태변경 시 구독하고 있는 컴포넌트에 전파해 리렌더링
+}
+
+{
+    // 페이스북에서 만든 상태 관리 라이브러리 Recoil
+    // 리액트에서 훅의 개념으로 상태 관리를 시작한 최초의 라이브러리 중 하나
+    // 최소 상태 개념인 Atom을 사용
+    // Recoil은 1.0.0이 릴리스 되지 않아 실제 프로덕션에 사용하기에는 안정성, 성능, 사용성 등을 보장할 수 없다
+    // 버전 변경으로 인해 호환성이 깨질수도 있다
+    // Recoil 0.7.5 버전 기준 설명
+}
+
+{
+    // RecoilRoot
+    // Recoil을 사용하기 위해서는 RecoilRoot를 애플리케이션의 최상단에 선언해 둬야 한다
+    export default function App() {
+        return <RecoilRoot>some components</RecoilRoot>
+    }
+}
+
+{
+    // RecoilRoot 코드
+    // RecoilRoot에서 Recoil에서 생성되는 상태값을 저장하기 위한 스토어를 생성
+    function RecoilRoot(props: Props): React.Node {
+        const {override, ...PropsExceptOverride} = props
+
+        // useStoreRef로 ancestorStoreRef의 존재를 확인
+        // ancestorStoreRef = Recoil에서 생성되는 atom과 같은 상태값을 저장하는 스토어를 의미
+        // useStoreRef가 가리키는 것은 AppContext가 가지고 있는 스토어
+        const ancestorStoreRef = useStoreRef()
+
+        if(override === false && ancestorStoreRef.current !== defaultStore){
+            // If ancestorStoreRef.current !== defaultStore, it mean that this
+            // RecoilRoot is not nested within another.
+            return props.children
+        }
+
+        return <RecoilRoot_INTERNAL {...propsExceptOverride}><RecoilRoot_INTERNAL/>
+    }
+}
+
+{
+    // useStoreRef 코드
+    const AppContext = React.createContext<StoreRef>({ current: defaultStore })
+    const useStoreRef = (): StoreRef => useContext(AppContext)
+}
+
+{
+    // 스토어의 기본값을 의미하는 defaultStore 
+    function notInAContext() {
+        throw err('This component must be used inside a <RecoilRoot> component.')
+    }
+
+    // 스토어 아이디를 제외하고 에러로 처리
+    // RecoilRoot로 감싸지 않은 컴포넌트에서는 스토어에 접근할 수 없다
+    const defaultStore: Store = Object.freeze({
+        // 스토어의 아이디 값을 가져오는 함수
+        storeID: getNextStoreID(),
+        // 스토어의 값을 가져오는 함수
+        getState: notInAContext,
+        // 값을 수정하는 함수
+        replaceState: notInAContext,
+        getGraph: notInAContext,
+        subscribeToTransactions: notInAContext,
+        addTransactionMetadata: notInAContext,
+    })
+}
+
+{
+    // replaceState 코드
+    const replaceState = (replacer: (TreeState) => TreeState) => {
+        startNextTreeIfNeeded(storeRef.current)
+
+        // Use replacer to get the next state:
+        const nextTree = nullthrows(storeStateRef.current.nextTree)
+        let replaced
+
+        try{
+            stateReplacerIsBeingExecuted = true
+            replaced = replacer(nextTree)
+        } finally {
+            stateReplacerIsBeingExecuted = false
+        }
+
+        if(replaced === nextTree){
+            return
+        }
+
+        // ...생략
+
+        // Save changes to nextTree and schedule a React update:
+        storeStateRef.current.nextTree = replaced
+
+        if(reactMode().early){
+            // 상태가 변할 때 변경된 상태를 하위 컴포넌트로 전파해 리렌더링을 일으키는 notifyComponent
+            notifyComponents(storeRef.current, storeStateRef.current, replaced)
+        }
+    }
+}
+
+{
+    // notifyComponents 구조
+    function notifyComponents(
+        store: Store,
+        storeState: StoreState,
+         
+    )
+}

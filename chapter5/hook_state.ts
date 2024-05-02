@@ -1009,5 +1009,134 @@
 }
 
 {
-    
+    // useRecoilState
+    // useState와 유사하게 값을 가져오고 값을 변경할 수도 있는 훅
+
+    // useRecoilState
+    function useRecoilState<T>{
+        recoilState: RecoilState<T>,
+    }: [T, SetterOrUpdater<T>]{
+        if(__DEV__) {
+            validateRecoilValue(recoilState, 'useRecoilState')
+        }
+
+        // 현재값을 가져오기 위해 useRecoilValue 사용
+        // 상태를 설정하는 훅으로 useSetRecoilState 훅 사용
+        return [useRecoilValue(recoilState), useSetRecoilState(recoilState)]
+    }
+}
+
+{
+    // useSetRecoilState 훅 = 내부에서 스토어를 가져온 다음 setRecoilValue 호출해 업데이트
+    // useSetRecoilState
+    /**
+        Returns a function that allows the value of a RecoilState to be updated. but does
+        not subscribe the component to changes to that RecoilState.
+    */
+    function useSetRecoilState<T>(recoilState: RecoilState<T>): SetterOrUpdater<T> {
+        if(__DEV__) {
+            validateRecoilValue(recoilState, 'useSetRecoilState')
+        }
+
+        const storeRef = useStoreRef()
+
+        return useCallback(
+            (newValueOrUpdater: ((T) => T | DefaultValue) | T | DefaultValue) => {
+                setRecoilValue(storeRef.current, recoilState, newValueOrUpdater)
+            },
+            [storeRef, recoilState],
+        )
+    }
+
+    // ...
+}
+
+{
+    // setRecoilValue 내부에서는 queueOrPerformStateUpdate 함수를 호출해 상태를 업데이트하거나 업데이트가 필요한 내용을
+    // 등록하는 것을 확인할 수 있다
+
+    // setRecoilValue
+    function setRecoilValue<T>(
+        store: Store,
+        recoilValue: AbstractRecoilValue<T>,
+        valueOrUpdater: T | DefaultValue | ((T) => T | DefaultValue),
+    ): void {
+        queueOrPerformStateUpdate(store, {
+            type: 'set',
+            recoilValue,
+            valueOrUpdater,
+        })
+    }
+}
+
+{
+    // Recoil 요약
+    // 애플리케이션 최상단에 <RecoilRoot />를 선언해 하나의 스토어를 만들고 atom이라는 상태 단위를 <RecoilRoot />에서 만든 스토어에 등록
+    // atom은 Recoil에서 관리하는 작은 상태 단위 각 값은 key를 바탕으로 구별
+    // 컴포넌트는 Recoil에서 제공하는 훅을 통해 atom의 상태 변화를 구독하고 값이 변경되면 forceUpdate 같은 기법을 통해 리렌더링을 실행해 최신 atom값을 가져온다
+
+    // 간단한 사용법
+    const counterState = atom({
+        key: 'counterState',
+        default: 0
+    })
+
+    function Counter(){
+        const [, setCount] = useRecoilState(counterState)
+
+        function handleButtonClick() {
+            setCount((count) => count + 1)
+        }
+
+        return (
+            <>
+                <button onClick={handleButtonClick}>+</button>
+            </>
+        )
+    }
+
+    // atom을 기반으로 또 다른 상태를 만들 수 있다
+    // selector = 한 개 이상의 atom 값을 바탕으로 새로운 값을 조립할 수 있는 api
+    // useStoreSelector와 유사한 역할 수행
+    // 이 외에도 atom에 비동기 작업도 추가 가능 (useRecoilStateLoadable, waitForAll, waitForAny, awaitForAllSettled)
+    const isBiggerThen10 = selector({
+        key: 'above10State',
+        get: ({get}) => {
+            return get(counterState) >= 10
+        },
+    })
+
+    function Count() {
+        const count = useRecoilValue(counterState)
+        const biggerThan10 = useRecoilValue(isBiggerThen10)
+
+        return (
+            <>
+                <h3>{count}</h3>
+                <p>count is bigger than 10: {JSON.stringify(biggerThan10)}</p>
+            </>
+        )
+    }
+
+    export default function App() {
+        return (
+            <RecoilRoot>
+                <Counter />
+                <Count />
+            </RecoilRoot>
+        )
+    }
+}
+
+{
+    // Recoil은 메타 팀에서 주도적으로 개발하고 있기 때문에 리액트에서 새롭게 만들어진느 기능을 그 어떤 라이브러리보다 잘 지원할것으로 기대
+    // selector를 필두로 다양한 비동기 작업을 지원하는 API를 제공 
+    // 리덕스와 달리 redux-saga나 redux-thunk등 추가적인 미들웨어를 사용하지 않더라도 비동기 작업을 수월하게 처리할 수 있다
+    // Recoil에서도 자체적인 개발 도구를 지원
+
+    // Recoil은 아직 정식 릴리스가 되지 않았으므로 위험부담이 있다
+}
+
+{
+    // Jotai
 }

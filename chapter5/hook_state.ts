@@ -1375,3 +1375,102 @@
     // 리액트 18 버전 API 지원 
     // Recoi 대비 여러 가지 장점으로 Recoil의 atom 형태 상태 관리를 선호하지만 아직 정식 버전이 출시되지 않아 사용이 망설여지는 개발자들이 주로 사용
 }
+
+{
+    // 작고 빠르며 확장에도 유연한 Zustand
+    // 리덕스에 영감을 받아 만들어짐 
+    // atom의 개념으로 최소 단위의 상태를 관리하는 것이 아니라 하나의 스토어를 중앙 집중형으로 활용해 이 스토어 내부에서 상태 관리
+}
+
+{
+    // Zustand의 스토어 코드
+    const createStoreImpl: CreateStoreImpl = (createState) => {
+        type TState = ReturnType<typeof createState>
+        type Listener = (state: TState, prevState: TState) => void
+
+        // state 값을 useState 외부에서 관리
+        // 스토어의 상태값을 담아두는 곳
+        let state: TState
+
+        const listeners: Set<Listener> = new Set()
+
+        // state값을 변경하는 용도
+        // partial = state의 일부만 변경하고 싶을 때 사용
+        // replace는 state를 완전히 새로운 값으로 변경
+        const setState: SetStateInternal<TState> = (partial, replace) => {
+            // ...
+            const nextState = 
+                typeof partial === 'function'
+                    ? (partial as (state: TState) => TState)(state)
+                    : partial
+            
+            if(nextState !== state){
+                const previousState = state
+                state = 
+                    replace ?? typeof nextState !== 'object'
+                        ? (nextState as TState)
+                        : Object.assign({}, state, nextState)
+                listeners.forEach((listeners) => listeners(state, previousState))
+            }
+        }
+
+        // 클로저의 최신 값을 가져오기 위해 함수로 만듦
+        const getState: () => TState = () => state
+
+        // listener를 등록
+        // listeners = Set 형태로 추가, 삭제, 중복관리가 용이
+        // 상태값 변경 시 리렌더링이 필요한 컴포넌트에 전파
+        const subscribe: (listener: Listener) => () => void = (listener) => {
+            listeners.add(listener)
+            // Unsubscribe
+            return () => listeners.delete(listener)
+        }
+
+        // listeners 초기화
+        const destroy: () => void = () => listeners.clear()
+        const api = { setState, getState, subscribe, destroy }
+        state = (createState as PopArgument<typeof createState>)(
+            setState,
+            getState,
+            api,
+        )
+
+        return api as any
+    }
+
+    // createStore는 이렇게 만들어진 getState, setState, subscribe, destroy를 반환
+}
+
+{
+    // 스토어 코드가 있는 파일은 ./src/vanilla.ts 
+    // 해당 파일에서 export 하는 유일한 함수 및 변수는 createStore
+    // 그 외에는 createStore를 이용하는데 필요한 타입
+    // 어떤것도 import 하지 않음
+    // 완전히 독립적으로 구성
+    // 순수 자바스크립트 환경에서 사용 가능
+    type CounterStore = {
+        count: number
+        increase: (num: number) => void
+    }
+
+    // set 인수를 활용해 생성 가능
+    // Zustand의 createStore 예제 코드에서처럼 state 생성 시 setState, getState, api를 인수로 넘겨줬기 때문에 가능
+    // 두번쨰 인수로 get을 추가해 현재 스토어의 값을 받아올 수도 있다
+    const store = createStore<CounterStore>((set) => ({
+        count: 0,
+        increase: (num: number) => set((state) => ({ count: state.count + num })),
+    }))
+
+    //subscribe를 통해 스토어의 값이 변경될 때마다 특정 함수를 실행할 수도 있다
+    // 현재값과 이전값 둘 다 확인 가능하므로 특정 값이 변경될때만 실행되게끔 최적화도 가능
+    store.subscribe((state, prev) => {
+        if(state.count !== prev.count){
+            console.log('count has been changed', state.count)
+        }
+    })
+
+    // 이렇게 생성된 스토어는 getState와 setState를 통해 현재 스토어의 값을 받아오거나 재정의할 수 있다
+    store.setState((state) => ({ count: state.count + 1 }))
+
+    store.getState().increase(10)
+}

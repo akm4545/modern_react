@@ -1139,4 +1139,239 @@
 
 {
     // Jotai
+    // Recoil의 atom 모델에 영감을 받아 만들어진 상태 관리 라이브러리
+    // 상향식(bottom-up) 접근법을 취하고 있다
+    // 리덕스와 같이 하나의 큰 상태를 애플리케이션에 내려주는 방식이 아니라 작은 단위의 상태를 위로 전파할 수 있는 구조를 취하고 있다
+    // 리액트 Context의 문제점인 불필요한 리렌더링이 발생하는 문제를 해결하고자 설계
+    // 개발자들이 메모이제이션이나 최적화를 거치지 않아도 리렌더링이 발생되지 않도록 설계
+}
+
+{
+    // atom
+    // Jotai에도 atom이 존재
+    // 최소 단위 상태를 의미 
+    // atom 하나만으로도 상태를 만들 수 있고 이에 파생된 상태를 만들 수도 있다
+
+    const counterAtom = atom(0)
+
+    // 이렇게 만든 textAtom 정보
+    console.log(counterAtom)
+    // ...
+    // {
+    //     init: 0,
+    //     read: (get) => get(config),
+    //     write: (get, set, update) =>
+    //         set(config, typeof update === 'function' ? update(get(config)) : update)
+    // }
+}
+
+{
+    // Jotai의 atom 코드
+    // 구현 자체는 Recoil의 atom과 약간 차이가 있다
+    // Jotai는 atom을 생성할 때 별도의 key를 넘겨주지 않아도 된다
+    // atom 내부에는 key 변수가 존재하긴 하지만 외부에서 받는 값은 아니며 단순히 toString()을 위한 용도로 한정
+    // config는 초깃값을 의미하는 init, 값을 가져오는 read, 값을 설정하는 write만 존재
+    // atom에 따로 상태를 저장하고 있진 않다
+    export function atom<Value, Update, Result extends void | Promise<void>>(
+        read: Value | Read<Value>,
+        write?: Write<Update, Result>,
+    ) {
+        const key = `atom${++keyCount}`
+        const config = {
+            toString: () => key,
+        } as WriteableAtom<Value, Update, Result> & { init?: Value }
+
+        if(typeof read === 'function') {
+            config.read = read as Read<Value>
+        }else {
+            config.init = read
+            config.read = (get) => get(config)
+            config.write = (get, set, update) =>
+                set(config, typeof update === 'function' ? update(get(config)) : update)
+        }
+
+        if(write){
+            config.write = write
+        }
+
+        return config
+    } 
+}
+
+{
+    // useAtomValue
+    export function useAtomValue<Value>(
+        atom: Atom<Value>
+        scope?: Scope,
+    ): Awaited<Value> {
+        const ScopeContext = getScopeContext(scope)
+        const scopeContainer = useContext(ScopeContext)
+        const { s: store, v: versionFromProvider } = scopeContainer
+
+        const getAtomValue = (verstion?: VersionObject) => {
+            const atomState = store[READ_ATOM](atom, version)
+            // ...
+        }
+
+        // Pull the atoms's state from the store into React state.
+        // useReducer 반환값
+        // 첫번째 = store의 버전 
+        // 두번쩨 = atom에서 get을 수행했을 때 반환되는 값
+        // 세번째 = atom 그 자체를 의미
+        const [[version, valueFromReducer, atomFromReducer], rerenderIfChanged] = 
+            useReducer<
+                Reducer<
+                    readonly [VersionObject | undefined, Awaited<Value>, Atom<Value>],
+                    VersionObject | undefined
+                >,
+                VersionObject | undefined
+            >(
+                (prev, nextVersion) => {
+                    const nextValue = getAtomValue(nextVersion)
+
+                    if(Object.is(prev[1], nextValue) && prev[2] === atom){
+                        return prev // bail out
+                    }
+
+                    return [nextVersion, nextValue, atom]
+                },
+                versionFromProvider,
+                (initialVersion) => {
+                    const initialValue = getAtomValue(initialVersion)
+                    return [initialVersion, initialValue, atom]
+                }
+            )
+        
+        let value = valueFromReducer
+        if(atomFromReducer !== atom) {
+            rerenderIfChanged(version)
+            value = getAtomValue(version)
+        }
+
+        useEffect(() => {
+            const { v: versionFromProvider } = scopeContainer
+            if(versionFromProvider) {
+                store[COMMIT_ATOM](atom, versionFromProvider)
+            }
+
+            const unsubscribe = store[SUBSCRIBE_ATOM](
+                atom,
+                rerenderIfChanged,
+                versionFromProvider,
+            )
+            rerenderIfChanged(versionFromProvider)
+            return unsubscribe
+        }, [store, atom, scopeContainer])
+
+        // ...
+        return value
+    }
+
+    // Recoil과는 다르게 컴포넌트 루트 레벨에서 Context가 존재하지 않아도 되는데 Context가 없다면 앞선 예제에서처럼 Provider가 없는
+    // 형태로 기본 스토어를 루트에 생성하고 이를 활용해 값을 저장하기 때문
+    // Jotai에서 export 하는 Provider를 사용한다면 앞선 예제에서 여러 개의 Provider를 관리했던 것처럼 각 Provider 별로 다른 atom 값을 관리 가능
+
+    // atom의 값은 store에 존재한다
+    // 객체 그 자체를 키로 활용해 값을 저장
+    // 이러한 방식을 위해 WeakMap이라고 하는 자바스크립트에서 객체만을 키로 가질 수 있는 독특한 방식의 Map을 활용해 recoil과는 다르게 
+    // 별도의 key를 받지 않아도 스토어에 값을 저장할 수 있다
+
+    // rerenderIfChanged = 리렌더링을 일으킴
+    // 조건
+    // 넘겨받은 atom이 Reducer를 통해 스토어에 있는 atom과 달라지는 경우
+    // subscribe를 수행하고 있다가 어디선가 이 값이 달라지는 경우
+    // 이런 로직 때문에 atom의 값이 어디서 변경되더라도 useAtomValue로 값을 사용하는 쪽에서는 언제든 최신 값의 atom을 사용해 렌더링 가능
+}
+
+{
+    // useAtom
+    // useState와 동일한 형태의 배열 반환
+    // 첫째 = atom의 현재 값을 나타내느 useAtomValue 훅의 결과를 반환
+    // 두번째 = useSetAtom훅 반환 (atom 수정 기능)
+
+    // Jotai의 useAtom 구현
+    export function useSetAtom<Value, Update, Result extends void | Promise<void>>(
+        atom: WritableAtom<Value, Update, Result>,
+        scope?: Scope,
+    ): SetAtom<Update, Result> {
+        const ScopeContext = getScopeContext(scope)
+        const { s: store, w: versionedWrite } = useContext(ScopeContext)
+        const setAtom = useCallback(
+            (update: Update) => {
+                // ...
+                // 스토어에서 해당 값을 찾아 직접 값을 업데이트
+                // 스토어에서 새로운 값을 작성한 이후에는 해당 값의 변화에 대해 알고 있어야 하는 listener 함수를 
+                // 실행해 값의 변화가 있음을 전파하고 사용하는 쪽에서 리렌더링이 수행되게 한다
+                const write = (version?: VersionObject) =>
+                    store[WRITE_ATOM](atom, update, version)
+
+                return versionedWrite ? versionedWrite(write) : write()
+            },
+            [store, versionedWrite, atom],
+        )
+
+        return setAtom as SetAtom<Update, Result>
+    }
+}
+
+{
+    // Jotai 예제
+    // 상태 선언 -> 파생된 상태를 사용하는 예제
+    import { atom, useAtom, useAtomValue } from 'jotai'
+
+    // 상태선언 API 
+    // 컴포넌트 외부에도 선언 가능
+    // 값뿐만 아니라 함수를 인수로 받을 수 있다 (다른 atom의 값으로부터 파생된 atom을 만들 수도 있다)
+    const counterState = atom(0)
+
+    function Counter(){
+        // 컴포넌트 내부에서 useAtom을 활용해 useState와 비슷하게 사용하거나 useAtomValue를 통해 getter만 가져올 수 있다
+        const [, setCount] = useAtom(counterState)
+
+        function handleButtonClick() {
+            setCount((count) => count + 1)
+        }
+
+        return (
+            <>
+                <button onClick={handleButtonClick}>+</button>
+            </>
+        )
+    }
+
+    const isBiggerThan10 = atom((get) => get(counterState) > 10)
+
+    function Count(){
+        const count = useAtomValue(counterState)
+        const biggerThan10 = useAtomValue(isBiggerThan10)
+
+        return (
+            <>
+                <h3>{count}</h3>
+                <p>count is bigger than 10: {JSON:stringify(biggerThan10)}</p>
+            </>
+        )
+    }
+
+    export default function App(){
+        return (
+            <>
+                <Counter />
+                <Count />
+            </>
+        )
+    }
+
+    // 이 외에도 localStorage와 연동해 영구적으로 데이터를 저장하거나 Next.js 리액트 네이티브와 연동하는 등 상태와 
+    // 관련된 다양한 작업 지원
+}
+
+{
+    // Recoil의 atom 개념을 도입하면서도 API가 간결
+    // Recoil에서는 atom에 따라 key를 필요로 하기 때문에 별도 관리 필요
+    // Jotai가 별도의 문자열 키가 없어도 객체의 참조를 통해 값을 관리 (WeakMap)
+    // Recoil에서는 atom 파생 값을 만들기 위해 selector가 필요했지만 Jotai는 atom 만으로 가능
+    // 타입스크립트로 작성돼 있어 타입을 잘 지원
+    // 리액트 18 버전 API 지원 
+    // Recoi 대비 여러 가지 장점으로 Recoil의 atom 형태 상태 관리를 선호하지만 아직 정식 버전이 출시되지 않아 사용이 망설여지는 개발자들이 주로 사용
 }

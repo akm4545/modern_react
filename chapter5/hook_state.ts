@@ -1474,3 +1474,167 @@
 
     store.getState().increase(10)
 }
+
+{
+    // Zustand의 리액트 코드
+    // Zustand를 리액트에서 서아요하기 위해서는 어디선가 store를 읽고 리렌더링 해야함
+    // Zustand 스토어를 리액트에서 사용할 수 있도록 도와주는 함수들은 ./src/react.ts에서 관리
+    // 타입을 제외하고 여기서 export 하는 함수는 useStore와 create다
+
+    // Zustand의 useStore 구현
+    export function useStore<TState, StateSlice>(
+        api: WithReact<StoreApi<TState>>,
+        selector: (state: TState) => StateSlice = api.getState as any,
+        equalityFn?: (a: StateSlice, b: StateSlice) => boolean,
+    ){
+        // 앞선 useStore의 subscribe, getState를 넘겨주고 스토어에서 원하는 state를 고르는 함수인 selector를 넘겨주고 끝
+        // useSyncExternalStoreWithSelector는 useSyncExternalStore(리액트 18 추가 훅 - 외부 관리 상태값을 리액트에서 사용)
+        // 와 완전히 동일하지만 원하는 값을 가져올 수 있는 selector와 
+        // 동등 비교를 할 수 있는 equalityFn 함수를 받는 차이가 있다
+        // 객체가 예상되는 외부 상태값에서 일부 값을 꺼내올 수 있도록 useSyncExternalStoreWithSelector 사용
+        const slice = useSyncExternalStoreWithSelector(
+            api.subscribe,
+            api.getState,
+            api.getServcerState || api.getState,
+            selector,
+            equalityFn
+        )
+
+        useDebugValue(slice)
+        return slice
+    }
+}
+
+{
+    // create = 리액트에서 사용 가능한 스토어를 만들어주는 변수
+    // 바닐라의 createStore를 기반으로 만들어짐
+    // useStore를 사용해 해당 스토어가 즉시 리액트 컴포넌트에서 사용할 수 있도록 만들어짐
+    const createImpl = <T>(createState: StateCreator<T, [], []>) => {
+        const api =
+            typeof createState === 'function' ? createStore(createState) : createState
+        
+        const useBoundStore: any = (selector?: any, equalityFn?: any) =>
+            useStore(api, selector, equalityFn)
+
+        // Object.assing으로 api를 복사하여 useBoundStore에 api의 모든 함수를 api도 동일하게 사용할 수 있게 제공
+        Object.assign(useBoundStore, api)
+
+        return useBoundStore
+    }
+
+    const create = (<T>(createState: StateCreator<T, [], []> | undefined) => 
+        createState ? createImpl(createState) : createImpl) as Create
+
+    export default create
+}
+
+{
+    // 스토어 생성 / 사용
+    // useStore를 사용하면 이 스토어를 리액트에서 사용 가능
+    // create를 사용해 스토어를 만들면 useStore를 굳이 사용하지 않더라도 바로 사용 가능
+    interface Store {
+        count: number
+        text: string
+        increase: (count: number) => void
+        setText: (text: string) => void
+    }
+
+    const store = createStore<Store>((set) => ({
+        count: 0,
+        text: '',
+        increase: (num) => set((state) => ({ count: state.count + num })),
+        setText: (text) => set({ text })
+    }))
+
+    const counterSelector = ({ count, increase }: Store) => ({
+        count,
+        increase,
+    })
+
+    function Counter() {
+        const { count, increase } = useStore(store, counterSelector)
+
+        function handleClick(){
+            increase(1)
+        }
+
+        return (
+            <>
+                <h3>{count}</h3>
+                <button onClick={handleClick}>+</button>
+            <>
+        )
+    }
+
+    const inputSelector = ({ text, setText }: Store) => ({
+        text,
+        setText
+    })
+
+    function Input(){
+        const { text, setText } = useStore(store, inputSelector)
+
+        useEffect(() => {
+            console.log('Input Changed')
+        })
+
+        function handleChange(e: ChangeEvent<HTMLInputElement>) {
+            setText(e.target.value)
+        }
+
+        return (
+            <div>
+                <input value={text} onChange={handleChange} />
+            </div>
+        )
+    }
+}
+
+{
+    // 간단한 Zustand 사용법
+    import { create } from 'zustand'
+
+    // create를 사용해 스토어 생성
+    // 반환값으로 스토어를 컴포넌트 내부에서 사용할 수 있는 훅을 받음
+    const useCounterStore = create((set) => ({
+        count: 1,
+        inc: () => set((state) => ({ count: state.count + 1 })),
+        dec: () => set((state) => ({ count: state.count - 1 })),
+    }))
+
+    function Counter(){
+        // 내부의 getter, setter에 접근 가능
+        const { count, inc, dec } = useCounterStore()
+        return (
+            <div class="counter">
+                <span>{count}</span>
+                <button onClick={inc}>up</button>
+                <button onClick={dec}>down</button>
+            </div>
+        )
+    }
+}
+
+{
+    // 리액트 컴포넌트 외부에 store를 만드는 것도 가능
+    import { createStore, useStore } from 'zustand'
+
+    // createStore를 사용하면 리액트와 상관없는 바닐라 스토어를 만들 수 있으며 이 바닐라 스토어는 useStore훅을 통해 접근해 리액트 
+    // 컴포넌트 내부에서 사용할 수 있게 된다
+    const counterStore = createStore((set) => ({
+        count: 1,
+        inc: () => set((state) => ({ count: state.count + 1 })),
+        dec: () => set((state) => ({ count: state.count - 1})),
+    }))
+
+    function Counter() {
+        const { count, inc, dec } = useStore(counterStore)
+
+        return (
+            <div>
+                <button onClick={inc}>up</button>
+                <button onClick={dec}>down</button>
+            </div>
+        )
+    }
+}

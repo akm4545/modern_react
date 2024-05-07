@@ -201,3 +201,131 @@
     // useEffect에는 익명 함수를 인수로 넘겨주기 때문에 여러 개 선언돼 있다면 어떤 훅인지 구별하기 어렵다
     // hooks도 props와 마찬가지로 값을 더블클릭해 원하는 값으로 수정 가능
 }
+
+{
+    // 오른쪽 rendered by
+    // 컴포넌트를 렌더링한 주체가 누구인지 확인 가능
+    // 프로덕션 모드에서는 react-dom의 버전만 확인 가능 
+    // 개발 모드에서는 렌더링한 부모 컴포넌트까지 확인 가능
+    // 컴포넌트 트리 뿐만 아니라 해당 컴포넌트에 대한 자세한 정보를 확인할 수 있다
+}
+
+{
+    // 프로파일러
+    // 컴포넌트 메뉴 = 정적인 현재 리액트 컴포넌트 트리의 내용을 디버깅
+    // 프로파일러 메뉴 = 리액트가 렌더링하는 과정에서 발생하는 상황을 확인하기 위한 도구
+
+    // 리액트 애플리케이션 렌더링 과정에서 어떤 컴포넌트가 렌더링됐는지, 몇 차례나 렌더링이 일어났는지, 어떤 작업에서 오래 걸렸는지 등
+    // 이 과정은 렌더링 과정에 개입해 디버깅 내용을 기록해야 하기 때문에 프로덕션 빌드로 실행되는 리액트 애플리케이션에서는 사용할 수 없다
+}
+
+{
+    // 프로파일러 사용 예제 코드
+    import {ChangeEvent, useEffect, useState} from 'react'
+
+    export default function App(){
+        const [text, setText] = useState('')
+        const [number, setNumber] = useState(0)
+        const [list, setList] = useState([
+            { name: 'apple', amount: 5000 },
+            { name: 'orange', amount: 1000 },
+            { name: 'watermelon', amount: 1500 },
+            { name: 'pineapple', amount: 500 },
+        ])
+
+        useEffect(() => {
+            setTimeout(() => {
+                console.log('surprise!')
+                setText('1000')
+            }, 3000)
+        })
+
+        function handleTextChange(e: ChangeEvent<HTMLInputElement>) {
+            setText(e.target.value)
+        }
+
+        function handleSubmit() {
+            setList((prev) => [...prev, { name: text, amount: number }])
+        }
+
+        function handleNumberChange(e: ChangeEvent<HTMLInputElement>) {
+            setNumber(e.target.valueAsNumber)
+        }
+
+        return (
+            <div>
+                <input type="text" value={text} onChange={handleTextChange} />
+                <button onClick={handleSubmit}>추가</button>
+
+                <input type="number" value={number} onChange={handleNumberChange} />
+
+                <ul>
+                    {list.map((value, key) => (
+                        <li key={key}>
+                            {value.name} {value.amount}원
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )
+    }
+}
+
+{
+    // 프로파일러 설정
+    // 프로파일러 메뉴로 진입 후 톱니 모양 설정 버튼으로 진행
+
+    // General탭의 Highlight updates when components render: 컴포넌트가 렌더링될 때마다 해당 컴포넌트에 하이라이트 표시 
+    // 매우 유용한 기능이므로 꼭 켜두는 것이 좋다
+
+    // Debugging 탭의 Hide logs during second render in Strict Mode: 리액트 애플리케이션이 엄격 모드에서 실행되는 경우 
+    // 원활한 디버깅을 위해 useEffect 등이 두 번씩 작동하는 의도적인 작동이 숨겨져 있다
+    // 이로 인해 useEffect 안에 넣은 console.log가 두 번씩 찍히기도 하는데 이를 막고 싶다면 해당 버튼을 활성화
+    // 프로덕션 모드에서는 해당 옵션과 관계없이 정상적으로 한 번씩 출력
+
+    // Profiler 탭의 Record why each component rendered while profiling: 프로파일링 도중 무엇 때문에 컴포넌트가 렌더링됐는지 기록
+    // 애플리케이션 속도가 조금 느려질 수는 있지만 디버깅에 도움이 되는 옵션이므로 켜두는 것이 좋다
+}
+
+{
+    // 프로파일링 메뉴
+    // 톱니바귀가 있던 바에서 왼쪽 맨 앞에 o 아이콘부터
+    
+    // 첫 번째 버튼은 Start Profiling(프로파일링 시작) 버튼으로 이 버튼을 누르면 프로파일링이 시작된다
+    // 클릭시 적색 동그라미로 변하며 다시 누르면 프로파일링이 중단되고 결과가 나타난다
+
+    // 두 번째 버튼은 Reload and Start profiling(새로고침 후 프로파일링 시작)은 첫 번째 버튼과 유사하지만 웹페이지가
+    // 새로고침되면서 이와 동시에 프로파일링이 시작된다
+
+    // 세 번째 버튼은 Stop Profiling(프로파일링 종료)버튼으로 프로파일링된 현재 내용을 모두 지우는 버튼이다
+
+    // 네 번째, 다섯 번째 버튼은 각각 Load Profile(프로파일 불러오기), Save Profile(프로파일 저장하기)버튼으로 프로파일링
+    // 결과를 저장하고 불러오는 버튼이다
+    // 결과를 저장 시 사용자의 브라우저에 해당 프로파일링 정보가 담긴 JSON 파일이 다운로드되며 다시 불러올 수도 있다
+    // 단순히 저장하고 불러오는 용도로 사용된다
+}
+
+{
+    // 불꽃모양 아이콘은 Flamegraph 탭이다
+    // 렌더 커밋별로 어떠한 작업이 일어났는지 나타낸다
+    // 너비가 넓을수록 컴포넌트 렌더링에 오래 걸렸다는 의미이다
+    // 마우스 커서를 가져다 대면 해당 컴포넌트의 렌더링과 관련된 정보를 확인할 수 있다
+    // 오른쪽에는 해당 커밋과 관련된 추가적인 정보를 확인할 수 있다
+    // 렌더링되지 않은 컴포넌트에 대한 정보도 확인 가능
+    // 렌더링되지 않은 컴포넌트는 회색으로 표시되며 Did not render라는 메세지가 표시된다
+    // 이를 활용하여 개발자가 의도한 대로 메모이제이션이 작동하는지, 특정 상태 변화에 따라서 렌더링이 의도한 대로 제한적으로 발생하고
+    // 있는지 확인하는 데 많은 도움을 얻을 수 있다
+    // Flamegraph의 오른쪽에 있는 화살표를 누르거나 세로 막대 그래프를 클릭하면 각 렌더 커밋별로 리액트 트리에서 
+    // 발생한 렌더링 정보를 확인할 수 있다 
+    // 여기서는 렌더링이 발생한 횟수도 확인할 수 있어 의도란 횟수만큼 렌더링이 발생했는지도 알 수 있다
+}
+
+{
+    // Ranked
+    // 해당 커밋에서 렌더링하는데 오래 걸린 컴포넌트를 순서대로 나열한 그래프
+    // Flamegraph와의 차이점은 모든 컴포넌트를 보여주는 것이 아니라 단순히 렌더링이 발생한 컴포넌트만 보여준다
+}
+
+{
+    
+}

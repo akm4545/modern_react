@@ -59,4 +59,7 @@
     }
 
     export default Home
+
+    // 페이지를 방문하여 메모리 탭에서 메모리 도구로 프로파일링 하면 getServerSideProps의 다수 실행과 메모리 누수를 확인할 수 있다
+    // getSErverSideProps는 페이지 접근 요청이 있을 때마다 실행되는 함수이므로 최대한 부수효과가 없는 순수 함수로 만들어야 한다
 }

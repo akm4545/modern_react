@@ -99,3 +99,29 @@
 
     MemoizedComponent.displayName = '메모 컴포넌트입니다.'
 }
+
+{
+    // 익명 함수로 선언하기 곤란한 경우 혹은 함수명과는 별도의 명칭을 부여해 명시적으로 확인이 필요한 경우에 displayName을 사용하면 좋다
+    // 고차 컴포넌트의 경우 이러한 기법을 유용하게 사용할 수 있다
+    // 고차 컴포넌트는 일반적으로 고차, 일반 컴포넌트의 조합으로 구성되므로 displayName을 잘 설정하면 디버깅에 도움이 된다
+    function withHigherOrderComponent(WrappedComponent) {
+        class WithHigherOrderComponent extends React.Component {
+            //...
+        }
+
+        WithHigherOrderComponent.displayName = `WithHigherOrderComponent(${getDisplayName(
+            WrappedComponent,
+        )})`
+
+        return WithHigherOrderComponent
+    }
+
+    function getDisplayName(WrappedComponent){
+        return WrappedComponent.displayName || WrappedComponent.name || 'Component'
+    }
+
+    // 리액트 빌드 트리를 확인하는 경우 terser등의 합축 도구 등이 컴포넌트명을 단순하게 난수화하기 떄문에 확인하기가 어려워진다
+    // Component.displayName의 경우에도 빌드 도구가 사용하지 않는 코드로 인식해 삭제할 가능성도 있다
+    // 그러므로 displayName과 함수명은 개발 모드에서만 제한적으로 참고하는 것이 좋다
+}
+

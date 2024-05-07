@@ -327,5 +327,83 @@
 }
 
 {
-    
+    // Timeline
+    // 시간이 지남에 따라 컴포넌트에서 어떤 일이 일어났는지를 확인할 수 있다
+    // 리액트 18 이상의 환경에서만 확인 가능
+    // input에 글자를 입력하면서 state의 값이 업데이트되고 이 값이 동기로 업데이트됐는지, 언제 업데이트가 이뤄졌는지 등을 확인 가능
+    // 시간 단위로 프로파일링 기간 동안 무슨 일이 있었는지, 무엇이 렌더링 됐고 어느 시점에 렌더링됐는지, 리액트의 유휴 시간은
+    // 어느 정도였는지 등을 자세히 확인할 수 있다
+}
+
+{
+    // 다시 예제 코드로 돌아와서 해당 코드는 사용자가 아무런 작동을 하지 않았음에도 두 번째 렌더링이 발생한다
+
+    // 1. 렌더링 정보에 대해 확인하려면 우측 상단 그래프에서 오른쪽 화살표를 누르거나 보고싶은 커밋 클릭
+    // 2. 우리가 알고 싶은 렌더링은 두 번째이므로 두 번째 렌더링 커밋을 누른다
+    // 3. What caused this update?의 App을 눌러 해당 컴포넌트가 렌더링된 이유를 살펴본다 (App 컴포넌트로 인해 렌더링 발생)
+    // 4. App 컴포넌트의 why did this render? 를 보면 Hook 1 changed라는 내용이 보인다 (첫 번쨰 훅으로 인해 렌더링이 실행된다는 의미)
+    // 5. App의 hooks를 보면 값이 1000인 1번 훅이 있다 이 정보를 토대로 프로파일링 기간에 useState에 1000을 넣는 코드를 찾는다
+    // 1번째 훅이라는 뜻은 컴포넌트 코드에 가장 먼저 선언된 훅이라는 뜻이기도 하다
+    // 타임라인을 살펴보면 약 3000ms 경에 App의 state 변화가 발생했음을 알 수 있다
+    // 6. 해당 정보를 종합해 보면 사용자가 아무런 작동을 하지 않아도 3초 경에 App의 state를 변경시키는 코드가 있다느 사실을 유추할 수 있다
+    // (setTimeout 코드 제거)   
+
+    // 사용자가 인터랙션 하는 과정 프로파일링
+    // 1. 프로파일링 시작 버튼을 누르고 input에 아무 글자를 입력한 후 프로파일링 중단
+    // 2. 프로파일링 결과 input에 입력할 때마다 렌더링 발생 대부분의 input은 state와 연결돼 있고 이는 곧 렌더링으로 이어지기 떄문에 큰 문제는 아니다
+    // 그러나 해당 렌더링은 App 전체가 랜더링되고 있었다 이는 App 내부에 해당 input과 관련된 state가 있기 때문에 입력할 때마다 App 전체가 리렌더링된다
+    // 이는 성능에 좋지 않으므로 해당 input을 별도의 컴포넌트로 분리한다
+}
+
+{
+    function InputText({ onSubmit }: { onSubmit: (text: string) => void }){
+        const [text, setText] = useState('')
+
+        function handleSubmit(){
+            onSubmit(text)
+        }
+
+        function handleTextChange(e: ChangeEvent<HTMLInputElement>){
+            setText(e.target.value)
+        }
+
+        return (
+            <>
+                <input text="text" value={text} onChange={handleTextChange} />
+                <button onClick={handleSubmit}>추가</button>
+            </>
+        )
+    }
+
+    export default function App(){
+        const [number, setNumber] = useState(0)
+        const [list, setList] = useState([
+            { name: 'apple', amount: 5000 },
+            { name: 'orange', amount: 1000 },
+            { name: 'watermelon', amount: 1500 },
+            { name: 'pineapple', amount: 500 },
+        ])
+
+        function onSubmit(text: string){
+            setList((prev) => [...prev, { name: text, amount: number }])
+        }
+
+        function handleNumberChange(e: ChangeEvent<HTMLInputElement>){
+            setNumber(e.target.valueAsNumber)
+        }
+
+        return (
+            <div>
+                <InputText onSubmit={onSubmit} />
+                <input type="number" value={number} onChange={handleNumberChange} />
+                <ul>
+                    {list.map((value, key) => (
+                        <li key={key}>
+                            {value.name} {value.amount}원
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )
+    }
 }

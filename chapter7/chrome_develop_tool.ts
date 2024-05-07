@@ -133,4 +133,51 @@
 
 {
     // 타임라인 할당 계측
+    // 시간의 흐름에 따라 메모리 변화를 확인할 수 있는 기능
+    // 시간의 흐름에 따라 메모리의 변화를 모두 기록하기 때문에 상대적으로 많은 부담이 발생
+
+    // 메모리 누수 예제 코드
+    import {useState} from 'react'
+
+    export default function App(){
+        const [number, setNumber] = useState(0)
+        const [list, setList] = useState<Array<string>>([])
+
+        const handleClick = () => {
+            const newNumber = number + 1
+            setNumber(newNumber)
+
+            setList((prev) => [
+                ...prev,
+                ...Array.from({ length: newNumber * 3000 }).map(
+                    (_, index) => `${index + number * 3000}`,
+                ),
+            ])
+        }
+
+        return (
+            <>
+                <button onClick={handleClick}>+</button>
+                <ul>
+                    {list.map((item, index) => (
+                        <li key={`${item}_${index}`}>{item}</li>
+                    ))}
+                </ul>
+            </>
+        )
+    }
+
+    // 항당 계측을 선택하고 시작을 누른다
+    // 버튼을 누를 때마다 3000, 6000, 9000 개씩 배열에 새로운 아이템이 생기며 리액트는 DOM에 해당 배열을 그려야 한다
+    // 그 결과 DOM을 그리기 위해 리액트가 1:1구조로 생성하는 FiberNode와 해당 배열을 담아야 하는 array가 엄청난 크기로 커진다
+
+    // 상단 그래프에서 검색을 원하는 범위를 좁히면 해당 기간에 메모리에 할당된 내용만 골라서 볼 수 있다
+    // 특정 변수를 클릭해서 전역 변수로 저장을 누르면 해당 변수가 무슨 값을 가지고 있는 객체인지 확인할 수도 있다
+
+    // 타임라인 계측을 활용하면 시간의 흐름에 따른 메모리 변화, 메모리 변화를 일으킨 변수, 해당 변수가 어느 정도 크기를 차지하고 있는지
+    // 등을 확인할 수 있다
+}
+
+{
+    // 
 }

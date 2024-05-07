@@ -407,3 +407,37 @@
         )
     }
 }
+
+{
+    // InputText 컴포넌트 내부에 문자열을 props로 받는 컴포넌트 추가
+    function CopyrightComponent({ text }: { text: string }){
+        return <p>{text}</P>
+    }
+
+    function InputText({ onSubmit }: { onSubmit: (text: string) => void }){
+        //...
+        return (
+            <>
+                <input type="text" value={text} onChange={handleTextChange} />
+                <button onClick={handleSubmit}>추가</button>
+                <CopyrightComponent text="all rights reserved"  />
+            </>
+        )
+    }
+
+    // CopyrightComponent는 고정된 props를 가져도 텍스트를 입력하면 리렌더링 감지
+    // 부모 컴포넌트가 리렌더링되기 때문에 리렌더링 발생
+}
+
+{
+    // CopyrightComponent 메모이제이션
+    const CopyrightComponent = memo(function CopyrightComponent({
+        text,
+    }: {
+        text: string
+    }){
+        return <p>{text}</p>
+    })
+
+    // 디버깅시 Did not rendered라는 메세지와 함께 렌더링되지 않는 것을 확인할 수 있다
+}

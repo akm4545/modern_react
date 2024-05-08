@@ -127,5 +127,71 @@
 }
 
 {
+    // eslint-plugin 접두사 플러그인
+    // 앞서 언급한 규칙을 모아놓은 패키지
+    // 예를들어 eslint-plugin-import 패키지는 import와 관련된 다양한 규칙을 제공
+    // eslint-plugin-react = react와 관련된 규칙을 모아놓음
+}
+
+{
+    // eslint-config
+    // eslint-plugin 세트로 제공하는 패키지
+    // 예를들어 어떤 조직에 여러 자바스크립트 저장소가 있고 이 저장소는 모두 리액트 기반의 비슷한 개발 환경으로 구성돼 있으며
+    // 이 개발 환경에 맞는 ESLint 규칙과 정의를 일괄적용하고 싶다면
+    // 여기에 필요한 eslint-plugin을 묶어 여러 프로젝트에 걸쳐 동일하게 사용할 수 있게 한다
     
+    // 대부분의 경우 이미 존쟇는 eslint-config를 설치해 적용하는게 일반적
+}
+
+{
+    // eslint-plugin, eslint-config는 네이밍 규칙으로 해당 접두사를 준수해야 하며 반드시 한 단어로 구성해야 한다
+    // eslint-plugin-naver O
+    // eslint-plugin-naver-financials X
+    
+    // 특정 스코프가 앞에 붙는 것까지는 가능
+    // @titicaca/eslint-config-triple O
+    // @titicaca/eslint-config-triple-rules X
+}
+
+{
+    // eslint-config-airbnb
+    // 리액트 기반 프로젝트에서 eslint-config를 선택한다고 했을 때 가장 먼저 손에 꼽는 eslint-config
+    // 자바스크립트 프로젝트에 적용할 ESLint 중에서는 가장 합리적인 선택이 될 수 있다
+    // 에어비엔비 개발자뿐만 아니라 500여 명의 수많은 개발자가 유지보수하고 있는 단연 가장 유명한 eslint-config 
+
+    // 제공하는 규칙
+    // 자바스크립트: https://github.com/airbnb/javascript#types
+    // 리액트: https://github.com/airbnb/javascript/tree/master/react
+
+    // 설치 가이드: https://github.com/airbnb/javascript/tree/master/packages/eslint-config-airbnb#eslint-config-aribnb-1
+}
+
+{
+    // @titicaca/triple-config-kit
+    // 한국 커뮤니티에서 운영되는 eslint-config 중 유지보수가 활발한 편에 속하며 많이 쓰이는 eslint-config 중 하나 
+    // 스타트업 개발사인 트리플(현 인터파크트리플)에서 개발하고 있으며 현재도 꾸준히 업데이트되고 있다
+    // 대부분의 eslint-config가 eslint-config-airbnb를 기반으로 약간의 룰을 수정해 배도되고 있는 것과 다르게 해당 
+    // 패키지는 자체적으로 정의한 규칙을 기반으로 운영
+    // 대부분의 유용하고 자바스크립트 개발자 사이에서 널리 알려진 규칙은 모두 제공하기 때문에 사용에 큰 지장은 없음
+
+    // 외부로 제공하는 규칙에 대한 데스트 코드가 존재
+    // 개발자가 규칙을 수정하거나 추가할 때 기대하는 바대로 eslint-config-triple에서 규칙이 추가됐는지 확인 가능
+    // CI/CD 환경, 카나리 배포 등 일반적인 npm 라이브러리 구축 및 관리를 위한 시스템이 잘 구축돼 있다
+    // 별도의 frontend규칙도 제공하고 있어 Node.js 환경 또는 리액트 환경에 맞는 규칙을 적용할 수 있다는 장점도 있다
+
+    // ESLint 뿐만 아니라 Prettier와 Stylelint를 각각 별도의 룰인 @titicaca/prettier-config-triple, @titicaca/stylelint-config-triple로 모노레포를
+    // 만들어 관리하고 있어 필요에 따라 설치해서 사용 가능
+}
+
+{
+    // eslint-config-next
+    // Next.js 프레임워크를 사용하고 있는 프로젝트에서 사용할 수 있는 eslint-config
+    // 자바스크립트 코드를 정적으로 분석할 뿐만 아니라 페이지나 컴포넌트에서 반환하는 JSX 구문 및 _app, _document에서 작성돼 있는 HTML
+    // 코드 또한 정적 분석 대상으로 분류해 제공
+    // 단순 자바스크립트 코드에 대한 향상뿐만 아니라 전체적인 Next.js 기반 웹 서비스의 성능 향상에 도움이 될 수 있다
+    // 핵심 웹 지표라고 하는 웹 서비스 성능에 영향을 미칠 수 있는 요소들을 분석해 제공하는 기능도 포함
+    // Next.js로 작성된 코드라면 반드시 설치 권장
+
+    // 제공하는 규칙: https://nextjs.org/docs/basic-features/eslint#eslint-plugin
+    // 설치 가이드: https://nextjs.org/docs/basic-features/eslint
 }

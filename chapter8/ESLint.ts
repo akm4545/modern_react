@@ -313,3 +313,154 @@
         }
     }
 }
+
+{
+    // 완전히 새로운 규칙 만들기
+    // new Date 금지
+
+    // new Date는 기기에 종속된 현재 시간으로 기기의 시간을 바꿔버리면 new Date()가 반환되는 현재 시간 또한 변경
+
+    // 시나리오
+    // 개발 서비스가 한국의 시간을 반환해야 한다
+    // 한국 시간을 서버에 의존해 작업해야 하는 규칙을 팀에서 정의 
+    // 따라서 new Date()는 사용 불가 / 서버의 시간을 반환하는 함수인 SErverDate()를 만들어 이 함수를 사용해야함
+    // new Date(날짜) 방식으로 사용은 허용 
+    // 시간을 가져오는것이 아니라 특정 시간을 가져오는 것이기 떄문
+
+    // new Date() 코드를 espree에서 파싱한 AST 분석
+    {
+        "type": "Program",
+        "start": 0,
+        "end": 10,
+        "range": [0, 10],
+        "body": [
+            {
+                // 해당 코드의 표현식 전체를 나타낸다
+                "type": "ExpressionStatement",
+                "start": 0,
+                "end": 10,
+                "range":[0, 10],
+                // ExpressionStatement에 어떤 표현이 들어가 있는지 확인 이것이 ESLint에서 확인하는 하나의 노드 단위
+                "expression": {
+                    // 해당 표현이 어떤 타입인지 나타내는데 여기서는 생성자를 사용한 NewExpression임을 확인 가능
+                    "type": "NewExpression",
+                    "start": 0,
+                    "end": 10,
+                    "range": [0, 10],
+                    // 생성자를 사용한 표현식에서 생성자의 이름을 나타냄
+                    "callee": {
+                        "type": "Identifier",
+                        "start": 4,
+                        "end": 8,
+                        "range": [4, 8]
+                        "name": "Date"
+                    },
+                    // 생성자를 표현한 표현식에서 생성자에 전달하는 인수를 나타낸다
+                    "arguments": []
+                }
+            }
+        ],
+        "sourceType": "module"
+    }
+}
+
+{
+    // AST를 톧로 금지해야 할 new Date() 노드
+    // type = NewExpression
+    // callee.name = Date
+    // ExpressionStatement.expression.arguments = 빈 배열
+
+    // ESLint의 create 함수를 통해 규칙 생성 (AST를 기반으로 만든 ESLint 규칙)
+    /**
+     * @type {import('eslint').Rule.RuleModule}
+     */
+    module.exports = {
+        // 해당 규칙과 관련된 정보를 나타내는 필드
+        // 실제 규칙이 작동하는 코드와는 크게 관련이 없다
+        // 사용 가능한 옵션은 공식 홈페이지의 meta 필드 참고
+        meta: {
+            type: 'suggestion',
+            docs: {
+                description: 'disallow use of the new Date()',
+                recommended: false,
+            },
+            fixable: 'code',
+            schema: [],
+            messages: {
+                message:
+                    'new Date()는 클라이언트에서 실행 시 해당 기기의 시간에 의존적이라 정확하지 않습니다. 현재 시간이 필요하면 ServerDate()를 사용해 주세요.',
+            },
+        },
+        // 객체를 반환해야 한다
+        // 코드 스멜을 감지할 선택자나 이벤트명 등을 선언 가능
+        create: function (context){
+            return{
+                // newExpression을 키로 선언해서 new 생성자 사용 시 ESLint 실행
+                NewExpression: function (node){
+                    // 생성자인지 검증하는 코드 작성 (name = Date, 인수 = X)
+                    if(node.callee.name === 'Date' && node.arguments.length === 0){
+                        // context.report를 통해 해당 코드 스멜을 리포트하고 문제가 되는 node와 찾았을때 노출하고 싶은 message를 가리킨다
+                        // 이 메세지는 meta.messages에서 가져올 수 있다
+                        // meta.messages의 객체에 키 값을 선언해두면 해당 키 값을 가진 meta.messages의 값을 가져올 수 있다
+                        context.report({
+                            node: node,
+                            messageId: 'message',
+                            // fix를 키로 하는 함수를 활용해 자동으로 수정하는 코드를 넣어줄 수 있다
+                            // ServerDate()로 대체할 것이므로 해당 코드로 대체하는 코드까지 넣어준다
+                            fix: function(fixer) {
+                                return fixer.replaceText(node, 'ServerDate()')
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    }
+}
+
+{
+    // 규칙은 하나씩 만들어서 배포하는 것은 불가능하며 반드시 eslint-plugin 형태로 규칙을 묶음으로 배포하는 것만 가능
+    // 빈 패키지를 만든 다음 yo와 generate-eslint를 활용해 eslint-plugin을 구성할 환경 생성
+    
+    // 생성 시 rule ID를 no-new-date로 생성했다 가정
+    // rules/no-new-date.js 파일을 열고 작성한 규칙을 붙여넣자
+    // docs에느 해당 규칙을 위한 설명을 tests에는 테스트 코드 작성
+    /**
+     * @fileoverview yceffort
+     * @author yceffort
+     */
+    'use strict'
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Requirments
+    // -----------------------------------------------------------------------------------------------------------------
+
+    const rule = require('../../../lib/rules/no-new-date'),
+        RuleTester = require('eslint').RuleTester
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Tests
+    // -----------------------------------------------------------------------------------------------------------------
+
+    const ruleTester = new RuleTester()
+    ruleTester.run('no-new-date', rule, {
+        valid: [
+            {
+                code: 'new Date(2021, 1, 1)',
+            },
+            {
+                code: 'new Date("2022-01-01)',
+            },
+        ],
+
+        invalid: [
+            {
+                code: 'new Date()',
+                errors: [{ message: rule.meta.messages.message }],
+                output: 'ServerDate()',
+            }
+        ]
+    })
+
+    // npm publish로 배포한 다음 원하는 프로젝트에서 설치해서 사용
+}

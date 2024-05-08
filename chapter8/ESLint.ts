@@ -195,3 +195,121 @@
     // 제공하는 규칙: https://nextjs.org/docs/basic-features/eslint#eslint-plugin
     // 설치 가이드: https://nextjs.org/docs/basic-features/eslint
 }
+
+{
+    // ESLint 규칙 만들기
+
+    // 이미 존재하는 규칙을 커스터마이징해서 적용하기
+    // import React를 제거하기 위한 ESLint 규칙 만들기
+    
+    // 리액트 17 버전부터는 새로운 JSX 런타임 덕분에 import React 구문이 필요가 없어짐
+    // 이에 따라 해당 구문을 삭제 시 아주 약간이나마 번들러의 크기를 줄일 수 있다
+
+    // import React가 있는 코드
+    // Component
+    // 다음과 같은 컴포넌트가 100개 있다고 가정
+    import React from 'react'
+
+    export function Component(){
+        return <div>hello world!</div>
+    }
+
+    // App
+    import React from 'react'
+    import Component1 from './Components/1'
+    import Component2 from './Components/2'
+    // ...
+    import Component100 from './Components/100'
+
+    function App(){
+        return (
+            <div className="App">
+                <Component1 />
+                <Component2 />
+                // ...
+                <Component100 />
+            </div>
+        )
+    }
+
+    export default App
+
+    // import React가 없는 코드
+    // Component
+    // 다음과 같은 컴포넌트가 100개 있다고 가정
+    import React from 'react'
+
+    export function Component(){
+        return <div>hello world!</div>
+    }
+
+    // App
+    import React from 'react'
+    import Component1 from './Components/1'
+    import Component2 from './Components/2'
+    // ...
+    import Component100 from './Components/100'
+
+    function App(){
+        return (
+            <div className="App">
+                <Component1 />
+                <Component2 />
+                // ...
+                <Component100 />
+            </div>
+        )
+    }
+
+    export default App
+
+    // 두 코드를 빌드하면 웹팩에서 제공하는 트리쉐이킹으로 사실 import React 구문이 제거된다
+    // 하지만 트리쉐이킹 시간을 줄일 수 있기 때문에 여전히 import React 구문 삭제는 유용하다
+}
+
+{
+    // no-restricted-imports = 어떠한 모듈을 import 하는 것을 금지하기 위해 만들어진 규칙
+    // 추가적인 인수를 제공하면 import 할 수 있는 모듈 제한 가능
+
+    // no-restricted-imports를 활용하여 import React 금지
+    // .eslintrc.js 파일
+    // default export만 금지 그래야 import React만 올바르게 필터링 가능
+    // 이 exports를 제대로 하지 않는다면 모든 "import {} from 'react'"에 에러가 있다는 잘못된 ESLint 리포트가 만들어질 것이다
+    module.exports = {
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    // paths에 금지시킬 모듈을 추가한다
+                    paths: [
+                        {
+                            // 모듈명
+                            name: 'react',
+                            // 모듈 이름
+                            importNames: ['default'],
+                            // 경고 메시지
+                            message:
+                                "import React from 'react'는 react 17부터 더 이상 필요하지 않습니다. 필요한 것만 react로부터 import해서 사용해 주세요.",
+                        },
+                    ],
+                },
+            ],
+        },
+    }
+}
+
+{
+    // 트리쉐이킹이 되지 않는 lodash 라이브러리 import 방지
+    module.exports = {
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    name: 'lodash',
+                    message:
+                        'lodash는 CommonJS로 작성돼 있어 트리쉐이킹이 되지 않아 번들 사이즈를 크게 합니다. lodash/* 형식으로 import 해주세요.'
+                }
+            ]
+        }
+    }
+}

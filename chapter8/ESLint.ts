@@ -464,3 +464,92 @@
 
     // npm publish로 배포한 다음 원하는 프로젝트에서 설치해서 사용
 }
+
+{
+    // 주의점
+    // Prettier와의 충돌
+    // Prettier = 코드의 포매팅을 도와주는 도구
+    // ESLint와 마찬가지로 코드를 정적 분석해서 문제를 해결한다는 점은 동일
+    // ESLint = 코드의 잠재적인 문제가 될 수 있는 부분을 분석
+    // Prettier = 포매팅과 관련된 작업 즉 줄바꿈, 들여쓰기, 작은따옴표 등을 담당
+    // Prettier는 자바스크립트뿐만 아니라 HTML, CSS, 마크다운, JSON 등 다양한 언어에도 적용 가능
+
+    // ESLint에서도 Prettier에서 처리하는 작업(들여쓰기 등)을 처리할 수 있기 때문에 두 가지 모두를 자바스크립트 코드에서
+    // 실행한다면 서로 충돌하는 규칙으로 인해 에러가 발생 
+    // 최악의 경우 ESLint, Prettier 모두 만족하지 못하는 코드가 만들어질 수도 있다
+
+    // 충돌 방지를 위해 서로 규칙이 충돌되지 않게끔 규칙을 잘 선언하는 방법이 있다
+    // ex Prettier에서 제공하는 규칙을 어기지 않도록 ESLint에서는 해당 규칙을 끄는 방법
+
+    // 또 다른 당법으로는 자바스크립트나 타입스크립트는 ESLint에, 그 외의 파일은 모두 Prettier에 맡기는 방법
+    // 그 대신 자바스크립트에 추가적으로 필요한 Prettier 규칙은 모두 eslint-plugin-prettier를 사용
+    // eslint-plugin-prettier = Prettier에서 제공하는 모든 규칙을 ESLint에서 사용할 수 있는 규칙으로 만들어둔 플러그인
+}
+
+{
+    // 규칙에 대한 예외처리 그리고 react-hooks/no-exhaustive-deps
+    
+    // 일부 코드에서 특정 규칙을 임시로 제외시키고 싶다면 eslint-disable- 주석 사용
+    
+    // 특정 줄만 제외
+    console.log('hello world') // eslint-disable-line no-console
+
+    // 다음 줄 제외
+    // eslint-disable-line no-console
+    console.log('hello world')
+
+    // 특정 여러 줄 제외
+    /* eslint-disable-line no-console */
+    console.log('Javascript debug log')
+    console.log('eslint is disabled now')
+    /* eslint-disable-line no-console */
+
+    //파일 전체에서 제외
+    /* eslint-disable-line no-console */
+    console.log('hello world')
+}
+
+{
+    // useEffect나 useMemo와 같이 의존 배열이 필요한 훅에 의존성 배열을 제대로 선언했는지 확인하는 역할을 무시할 목적으로
+    // eslint-disable-line no-exhaustive-deps를 많이 사용한다
+    // 해당 코드는 1800줄로 이루어져 있다 그만큼 리액트 팀에서는 의존성 배열을 검사하기 위해 많은 공을 들인다
+
+    // 리액트 개발자들은 개발 시 의존성 배열이 너무 길어지거나 빈 배열을 넣어서 컴포넌트가 마운트되는 시점에 한 번만 강제로 실행하거나
+    // 임의로 판단하여 없어도 괜찮다 생각될 때 등에 사용
+
+    // 이것은 위험한 발상이며 잠재적인 버그를 야기할 수 있다
+
+    // 괜찮다고 임의로 판단한 경우: 가장 위험한 경우 실제로 면밀히 검토해서 괜찮은 경우라면 해당 변수는 컴포넌트 상태와 별개로 동작한다는것을 의미
+    // 이 경우에는 해당 변수를 어디서 어떻게 선언할지 다시 고민해봐야 한다 
+    // 정말 괜찮다 하더라도 이러한 작업이 반복되면 정말로 괜찮지 않은 코드에서도 동일하게 사용해 버그를 야기할 위험성이 있다
+
+    // 의존성 배열이 너무 긴 경우: 의존성 배열이 너무 길다는 것은 useEffect 내부 함수가 너무 길다는 말과 동일
+    // uesEffect가 너무 길다면 useEffect를 쪼개서 의존성 배열의 가독성과 안정성을 확보해야한다
+
+    // 마운트 시점에 한 번만 실행하고 싶은 경우: 가장 흔히 볼 수 있는 경우로 의도적으로 []로 모든 의존성을 제거해 컴포넌트가 마운트되는
+    // 시점에만 실행하고 싶은 경우다 이러한 접근법은 과거 클래스 컴포넌트에서 사용되던 생명주기 형태의 접근 방법으로 함수 컴포넌트의
+    // 패러다임과는 맞지 않을 가능성이 있다
+    // 또한 [] 배열이 있다는 것은 컴포넌트의 상태값과 별개의 부수 효과가 되어 컴포넌트의 상태와 불일치가 일어날 수 있게 된다
+    // 마지막으로 상태와 관계없이 한 번만 실행돼야 하는 것이 있다면 해당 컴포넌트에 존재할 이유가 없다 이 경우 적절한 위치로 옮기는 것이 좋다
+
+    // 정말 넣을 것이 없어서 []를 넣는 경우는 제외
+}
+
+{
+    // 모든 규칙은 존재하는 이유가 있으며 eslint-disable을 많이 사용하고 있다면 그렇게 무시하는 것이 옳은지 아니면 해당 규칙을 제거하는 
+    // 것이 옳은지 꼭 점검해 봐야한다
+}
+
+{
+    // ESLint 버전 충돌
+    // (2022년 10월 1일 기준) 최신 버전의 react-scripts인 5.0.1에서 eslint-config-triple 최신 버전을 함께 설치하고 ESLint를 수행하면 
+    // 에러가 발생
+
+    // create-react-app을 실행하면 설치되는 react-scripts의 5.0.1 버전에는 ESLint 8에 의존성을 eslint-config-triple은 ESLint 7에 
+    // 의존성을 가지고 있다
+    // ESLint가 실행되는 순간 높은 버전인 8이 실행됐고 8에는 eslint-plugin-promise가 없기 때문에 에러가 발생
+    // 공식 문서에서는 ESLint를 peerDependencies로 설정해 두라고 권장
+
+    // eslint-config, eslint-plugin이 지원하는 ESLint 버전을 확인하고 설치하고자 하는 프로젝트에서 ESLint 버전을 어떻게 지원하고
+    // 있는지 살펴봐야 한다
+}

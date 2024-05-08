@@ -2,6 +2,20 @@
 // 원하는 요소를 찾아 테스트 실행
 
 // 링크가 제대로 있는지 확인하는 테스트
+
+// beforeEach: 각 테스트(it)를 수행하기 전에 실행하는 함수 여기서는 각 테스트를 실행하기에 앞서 Static Component 렌더링
+
+// describe: 비슷한 속성을 가진 테스트를 하나의 그룹으로 묶는 역할 꼭 필요한 메서드는 아니지만 테스트 코드가 많아지고 관리가 어려워진다면 
+// 묶어서 관리하는 것이 편리하다 describe 내부에 describe를 또 사용 가능다
+
+// it: test와 완전히 동일하며 test의 축약어다 it라는 축약어를 제공하는 이유는 테스트 코드를 좀 더 사람이 읽기 쉽게 하기 위해서다
+// describe ... it (something) 과 같은 형태작성해 두면 테스트 코드가 한결 더 문어체같이 표현되어 읽기 쉬워진다
+
+// testId: testId는 리액트 테스팅 라이브러리의 예약어로 get등의 선택자로 선택하기 어렵거나 곤란한 요소를 선택하기 위해 사용할 수 있다
+// HTML의 DOM 요소에 testIㅇ 데이터셋을 선언해 두면 이후 테스트 시에 getByTestId, findByTestId 등으로 선택 가능
+// 웹에서 사용하는 querySelector([data-testid="${yourId}"])와 같은 역할을 한다
+
+
 import { render, screen } from "@testing-library/react";
 
 import StaticComponent from "./index";

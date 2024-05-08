@@ -1,46 +1,25 @@
-# Getting Started with Create React App
+리액트 컴포넌트 테스트 순서
+1. 컴포넌트 렌더링
+2. 필요하다면 컴포넌트에서 특정 액션 수행
+3. 컴포넌트 렌더링과 2번의 액션을 통해 기대하는 결과와 실제 결과를 비교
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+create-react-app 에는 이미 react-testing-library가 포함
 
-## Available Scripts
+App.test.tsx 파일이 App.tsx 파일을 테스트
+App.test.tsx 파일 테스트 내용
+1. <App/>을 렌더링
+2. 렌더링하는 컴포넌트 내부에서 "learn react" 문자열을 가진 DOM 요소를 찾음
+3. expect(linkElement).toBeInTheDocument()라는 어설션을 활용해 2번에서 찾은 요소가 document 내부에 있는지 확인
 
-In the project directory, you can run:
+리액트 컴포넌트에서 테스트하는 일반적인 시나리오는 특정한 문언가를 지닌 HTML 요소가 있는지 여부
+이를 확인하는 방법은 크게 3가지
 
-### `npm start`
+1. getBy...: 인수의 조건에 맞는 요소를 반환 해당 요소가 없거나 두 개 이상이면 에러를 발생 복수 개를 찾고 싶다면 getAllBy...를 사용
+2. findBy...: getBy...와 거의 유사하나 Promise를 반환한다는 차이가 존재 즉 비동기로 찾는다 기본값으로 1000ms의 타임아웃을 가지고 있다 
+    마찬가지로 두 개 이상이면 에러를 발생시키지만 복수 개를 찾고 싶다면 findAllBy...를 사용 이러한 특성 때문에 findBy는 비동기 액션 이후에 
+    요소를 찾을 때 사용
+3. queryBy...: 인수의 조건에 맞는 요소를 반환하는 대신 찾지 못하면 null 반환 찾지 못해도 에러를 발생시키고 싶지 않다면 queryBy...를 사용
+    마찬가지로 복수 개를 찾았을 때는 에러를 발생시키며 복수개를 찾고 싶다면 queryAllBy...를 사용
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+App.tsx, App.test.tsx의 경우와 마찬가지로 같은 디렉터리상에 위치하는 것이 일반적 
+이름 규칙인 *.test.{t|s}jsx만 준수한다면 디렉터리 내부에서 명확하게 구별되고 대부분의 프레임워크가 이러한 이름으로 된 파일은 번들링에서 제외

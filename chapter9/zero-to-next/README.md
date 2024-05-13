@@ -170,3 +170,25 @@ eslint-config-next는 단순히 코드에 있을 잠재적인 문제만 확인�
 
 설치
 npm i @titicaca/eslint-config-triple --save-dev
+
+eslint-config-next와 eslint-config-triple이 함께 작동하려면 별도 설정이 필요하다
+
+Next.js에 스타일 적용 styled-component 사용
+
+npm i styled-components
+npm i @types/styled-components --save-dev
+
+swc에 styled-components를 사용한다는 것을 알리기 위해 styledComponents: true를 next.config.js에 추가
+추가적으로 pages/_document.tsx의 Head에 styled-components를 사용하기 위한 ServerStyleSheet를 추가한다 (src 생성 -> src/pages 생성)
+
+src 폴더 하위 구조
+(Next.js 13 버전 기준)
+pages: Next.js에서 예약어로 지정해 두고 사용하는 폴더 이 폴더 하위의 내용은 모두 실제 라우터가 된다
+    /: 메인 페이지
+    /todos/:id: 상세 페이지
+components: 페이지 내부에서 사용하는 컴포넌트를 모아둔 폴더
+hooks: 직접 만든 훅을 모아둔 폴더
+types: 서버 응답 타입 등 공통으로 사용하는 타입을 모아둔 폴더
+utils: 애플리케이션 전역에서 공용으로 사용하는 유틸성 파일을 모아둔 폴더
+
+Next.js 프로젝트 실행, 빌드, 린트와 관련된 명령어를 package.json에 기재

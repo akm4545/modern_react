@@ -36,20 +36,32 @@ const MOCK_TODO_RESPONSE = {
     completed: false,
 }
 
+// MSW를 활용해 fetch 응답을 모킹 
+// setupServer = MSW 제공 메서드로 서버를 만드는 역할
+// 해당 함수 내부에 Express나 Koa와 비슷하게 라우트 선언 가능
 const server = setupServer(
+    // 라우트 설정
     rest.get('/todos/:id', (req, res, ctx) => {
         const todoId = req.params.id
 
+        // todoId 값 체크 
         if(Number(todoId)){
+            // 숫자일 경우 정상 데이터 리턴
             return res(ctx.json({...MOCK_TODO_RESPONSE, id: Number(todoId)}))
         }else{
+            // 숫자가 아닐 경우 404 반환
             return res(ctx.status(404))
         }
     }),
 )
 
+// 테스트 코드 시작 전에 서버 가동 
 beforeAll(() => server.listen())
+// server.resetHandlers() = setupServer의 기본 설정으로 되돌리는 코드
+// 서버에서 실패가 발생할 경우를 테스트 할 때는 res를 임의로 ctx.status(503)과 같이 변경
+// 이를 리셋하지 않으면 계속해서 실패하는 코드로 남는다
 afterEach(() => server.resetHandlers())
+// 테스트 코드 종료 후 서버 종료
 afterAll(() => server.close())
 
 beforeEach(() => {
@@ -71,8 +83,11 @@ describe('FetchComponent 테스트', () => {
     })
 
     it('버튼을 클릭하고 서버 요청에서 에러가 발생하면 에러 문구를 노출한다.', async () => {
+        // 에러 발생의 경우를 테스트 하기 위해 
+        // server.use를 사용해 기존 setupServer의 내용을 새롭게 덮어쓴다
         server.use(
             rest.get('/todos/:id', (req, res, ctx) => {
+                // 모든 응답이 503으로 떨어지도록
                 return res(ctx.status(503))
             })
         )

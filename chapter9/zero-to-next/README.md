@@ -155,3 +155,18 @@ compilerOptions: 타입스크립트를 자바스크립트로 컴파일할 때 �
 include: 타입스크립트 컴파일 대상에서 포함시킬 파일 목록을 의미 여기서는 타입스크립트 파일과 Next.js에서 자동으로 생성하는 next-env.d.ts 파일을 포함시켰다
 
 exclude: 타입스크립트 컴파일 대상에서 제외시킬 파일 목록을 의미 node_modules를 대상에서 제외시켰다
+
+
+next.config.js 파일 생성
+next.config.js에서 사용 가능한 옵션을 확인하고 싶다면 깃허브 저장소를 방문해 확인할 수 있다
+
+next.config.js 옵션
+reactStrictMode: 리액트 엄격 모드 활성화
+poweredByHeader: 일반적으로 보안 취약점으로 취급되는 X-Powered-By 헤더 제거
+eslint.ignoreDuringBuilds: 빌드 시에 ESLint를 무시. 일반적으로 Next.js 빌드 시에 ESLint도 같이 수행 여기서는 true로 설정해 빌드 시에 ESLint를 수행하지 않게 했다 이후에 ESLint는 CI 과정에서 별도로 작동하게 만들어 빌드를 더욱 빠르게 만든다
+
+eslint-config-next는 단순히 코드에 있을 잠재적인 문제만 확인할 뿐 띄어쓰기나 줄바꿈과 같이 코드의 스타일링을 정의해 주지는 않는다
+일반적인 ESLint 작업을 수행하기 위해 가장 설치 및 설정이 쉬운 @titicaca/eslint-config-triple을 설치해 사용
+
+설치
+npm i @titicaca/eslint-config-triple --save-dev

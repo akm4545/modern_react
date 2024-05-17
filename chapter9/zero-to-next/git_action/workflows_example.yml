@@ -1,0 +1,49 @@
+# 저장소에 Prettier가 설치돼 있다면 yaml 파일도 함께 포함시켜 코드 스타일을 유지하는 것이 좋다
+# 예시로 작성한 액션은 Next.js 애플리케이션의 빌드를 확인하는 CI 액션
+
+#액션의 이름 필수값은 아니지만 액션을 구별하는 데 도움이 되므로 이름을 지정하는 것이 좋다
+name: chapter9 build 
+# run-name은 액션이 실행될 때 구별할 수 있는 타이틀명. 필수값은 아님. github.actor를 활용해 어떤 사람이 해당 액션을 트리거했는지 정도를 구별하는데 쓸
+# 수 있다 만약 설정돼 있지 않다면 풀 리퀘스트 이름이나 마지막 커밋 메시지 등이 출력
+run-name: ${{ github. actor }} has been added new commit.
+
+# on은 필수값으로 언제 이 액션을 실행할지 정의 
+# 원격 저장소의 푸시가 발생했을 때 실행하도록 했으며 main 브랜치에 푸시가 발생했을 때는 실행하지 않도록 설정했다 그 이유는 main 브랜치의 직접적인
+# 푸시는 풀 리퀘스트가 머지됐을 때만 일어나며 이 풀 리퀘스트 머지 단계에서 이미 해당 액션으로 CI를 통과했을 것이기 때문이다 main 브랜치를 제외하지 않는다면 
+# CI 중복 실행이 발생하기 떄문에 별도로 막음
+on:
+  push:
+    branches-ignore:
+      - 'main'
+
+# 필수값으로 해당 액션에서 수행할 잡을 의미
+# 한개 이상 설정 가능하며 여러 개를 지정 시 병렬로 수행
+jobs:
+# build는 예약어가 아니라 임의로 지정한 이름 name과 같은 역할을 한다고 보면 된다 jobs의 하위 항목이므로 반드시 들여쓰기해야 한다
+# jobs에 1개 이상의 작업이 있는데 그중 하나의 작업이 build 라는 것을 의미
+  build:
+  # 어느 환경에서 해당 작업이 실행될지를 결정 별도의 러너를 설정하고 싶지 않고 깃허브에서 제공하는 서버를 쓰고 싶다면 ubuntu-latest를 선언
+  # 커스텀 러너를 쓴다면 해당 러너명을 지정. 커스텀 러너를 쓰고 싶다면 저장소의 Settings -> actions -> Runners에 추가 가능
+    runs-on: ubuntu-latest
+    # 해당 잡에서 순차적으로 수행할 작업
+    steps:
+    # 해당 스텝에서 작업을 actions/checkout@v3을 사용해서 작업하겠다는 의미
+    # actions/checkout@v3은 깃허브에서 제공하는 기본 액션으로 별도 파라미터를 제공하지 않으면 해당 브랜치의 마지막 커밋을 기준으로 체크아웃
+      - uses: actions/checkout@v3
+      # actions/setup-node@v3 깃허브에서 제공하는 기본 액션 해당 러너에 Node.js를 설치 
+      # with.node-version.16을 함께 지정했는데 Node.js 16 버전을 설치한다
+      # 해당 프론트엔드 프로젝트가 배포되는 Node.js 버전에 맞춰 작성하면 된다
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      # 의존성 설치 작업 
+      - name: 'install dependencies'
+      # 디렉토리 변경 
+        working-directory: ./chapter9/my-app
+      # 의존성 설치를 위해 npm ci를 선언
+        run: npm ci
+      # CI를 위한 작업
+      - name: 'build'
+        working-directory: ./chapter9/my-app
+      # 마무리 작업으로 빌드를 수행 npm run build를 실행해 Next.js 프로젝트 빌드
+        run: npm run build

@@ -1,0 +1,28 @@
+name: Lighthouse CI
+on: [push]
+
+jobs:
+  lhci:
+    name: Lighthouse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+      - name: install & build
+        run: |
+          npm install
+          npm build
+      - nema: run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.8.x
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+# 저장소 루트에 lhci를 실행하는데 필요한 설정 파일이 있어야 한다 (.lighthouserc.js)

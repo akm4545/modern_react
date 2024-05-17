@@ -1,0 +1,23 @@
+# 취약점 발견시 액션 실패
+name: Test site for publicly know js valnerabilities
+
+on:
+  push:
+    branches: [main]
+# 푸시가 일어났다고 해서 무조건적으로 배포가 실행되거나 완료된 상황이 아니기 떄문에 아래 구문처럼 사용하는것이 좋다
+# on:
+#   workflow_run:
+#   # 해당 워크 플로우는 deploy가 완료된 이후 실행
+#     workflows: [deploy]
+#     types:
+#       - completed
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test for public javascript library vulnerabilities
+        uses: lirantal/is-website-vulnerable@master
+        with:
+          scan-rul: 'https://yceffort.kr'
+

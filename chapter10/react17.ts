@@ -326,4 +326,45 @@
 
         return <p>{users === null ? 'Loading' : JSON.stringify(users)}</p>
     }
+
+    // Profiler
+    // 리액트 애플리케이션의 성능 최적화를 측정하기 위해 사용
+    // 리액트 버전을 바꾸면서 테스트 해보면 16 버전은 클린업 함수가 update 이전에 실행되지만 17 버전은 후에 실행되어 commitTime이 조금이나마 빨라진다
+}
+
+{
+    // 컴포넌트의 undefined 반환에 대한 일관적인 처리
+    // 리액트 16과 17 버전은 컴포넌트 내부에서 undeined를 반환하면 오류가 발생
+    // 이는 의도치 않게 잘못된 반환으로 인한 실수를 방지하기 위함
+
+    function Button(){
+        return <>버튼</>
+    }
+
+    export default function App() {
+        // 반환되는 게 없으므로 undefined가 반환
+        ;<Button />
+    }
+
+    // 에러 발생
+
+    // 리액트 16에서는 forwardRef나 memo에서 undefined를 반환하는 경우에는 별다른 에러가 발생하지 않는 문제가 있다
+    const ForwardedButton = forwardRef(() => {
+        ;<Button />
+    })
+
+    const MemoizedButton = memo(() => {
+        ;<Button />
+    })
+
+    export default function App() {
+        //에러도 안 나지만 아무것도 나타나지 않음
+        // 리액트 17에선 에러 발생
+        return (
+            <>
+                <ForwardedButton />
+                <MemoizedButton />
+            </>
+        )
+    }
 }

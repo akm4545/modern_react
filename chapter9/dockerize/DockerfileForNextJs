@@ -1,0 +1,43 @@
+FROM node:18.12.0-alpine3.16 as deps
+
+WORKDIR /app
+
+COPY package.json ./package.json
+COPY package-lock.json ./package-lock.json
+
+RUN npm ci
+
+FROM node:18.12.0-alpine3.16 as build
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . ./
+
+RUN npm run build
+
+# next.config.js에 후가
+
+# /** @type {import('next').NextConfig} */
+# const nextConfig = {
+#     reactStrictMode: true,
+#     swcMinify: true,
+#     //추가 옵션
+#     output: 'standalone',
+# }
+
+# module.exports = nextConfig
+
+# 해당 옵션은 빌드를 위해 제공하는 기능으로 Next.js는 프로덕션에서 실행에 필요한 파일들만 모아서 바로 실행할 수 있는 준비를 대신해 준다
+# node_modules 내부의 파일도 포함
+
+FROM node:18.12.0-alpine3.16 as runner
+
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+
+EXPOSE 3000
+
+ENTRYPOINT [ "node", "server.js" ]
+

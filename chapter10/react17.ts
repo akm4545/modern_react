@@ -78,7 +78,105 @@
 
 {
     //만약 기존 리액트 16의 방식대로 모든 이벤트가 document에 달려 있다면
+    import React from 'react' // 16.14
+    import ReactDOM from 'react-dom' //16.14
+
+    function React1614(){
+        function App() {
+            function 안녕하세요(){
+                alert('안녕하세요! 16.14')
+            }
+
+            return <button onClick={안녕하세요}>리액트 버튼</button>
+        }
+
+        return ReactDOM.render(<App />, document.getElementById('React-16-14'))
+    }
+
+    import React from 'react' // 16.8
+    import ReactDOM from 'react-dom' // 16.8
+
+    function React168(){
+        function App(){
+            function 안녕하세요(){
+                alert('안녕하세요! 16.8')
+            }
+
+            return <button onClick={안녕하세요}>리액트 버튼</button>
+        }
+
+        return ReactDOM.render(<App />, document.getElementById('React-16-8'))
+    }
     
-    
-    
+    // 이 코드는 다음과 같이 렌더링될 것이다
+    <html>
+        <body>
+            <div id="React-16-14">
+                <div id="React-16-8"></div>
+            </div>
+        </body>
+    </html>
+
+    // 만약 이 상황에서 React168 컴포넌트에 이벤트 전파를 막는 e.stopPropagation을 실행하면 모든 이벤트는 document로 올라가 있는 상태이기
+    // 떄문에 document의 이벤트 전파는 막을 수 없다
+    // 따라서 React1614에도 이 이벤트를 전달받는다
+
+    // 이러한 문제 때문에 이벤트 위임의 대상을 document에서 컴포넌트의 최상위로 변경했다
+    // 이렇게 되면 각 이벤트는 해당 리액트 컴포넌트 트리 수준으로 격리되므로 이벤트 버블링으로 인한 혼선을 방지할 수 있다
+    // jQuery 같은 라이브러리와 리액트 16등이 혼재되어 있는 상황인 경우에도 이와 동일한 문제가 발생할 수 있다
+}
+
+{
+    // 리액트 16 버전에서 document와 리액트가 렌더링되는 루트 컴포넌트 사이에서 이벤트를 막는 코드를 추가하면 리액트의 모든 핸들러가 작동하지 않도록 막을 수 있었다
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1, shring-to-fit=no"
+            />
+        </head>
+        <body>
+            // 리액트 루트 컴포넌트
+            <div id="main">
+                <div id="root"></div>
+            </div>
+            <script>
+                // 여기에 클릭 이벤트로 이벤트 전파를 막아버리면 리액트의 
+                // 클릭 이벤트 핸들러가 모두 막힌다
+                document.getElementById('main').addEventListener(
+                    'click',
+                    function (e) {
+                        e.stopPropagation()
+                    },
+                    false,
+                )
+            </script>
+        </body>
+    </html>
+}
+
+{
+    // 이러한 변경으로 만약 코드에 document.addEventListener를 활용해 리액트의 모든 이벤트를 document에서 확인하는 코드가 있다면 
+    // 여기까지 이벤트가 전파되지 않는 경우도 존재할 수 있으므로 꼭 확인해 봐야 한다
+    import React, {MouseEvent, useEffect} from 'react'
+    import ReactDOM from 'react-dom'
+
+    export default function App(){
+        useEffect(() => {
+            document.addEventListener('click', (e) => {
+                console.log('이벤트가 document까지 올라옴')
+            })
+        }, [])
+
+        function 안녕하세요(e: MouseEvent<HTMLButtonElement>) {
+            e.stopPropagation()
+            alert('안녕하세요!')
+        }
+
+        return <button onClick={안녕하세요}>리액트 버튼</button>
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'))
 }

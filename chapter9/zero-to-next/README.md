@@ -302,4 +302,39 @@ npm은 이러한 버전에 대해 나름의 규칙을 정의해뒀다 주로 사
 
 - react@~16.0.0: 패치 버전에 대해서만 호환되는 버전을 의미한다 즉 여기서 가능한 버전은 16.0.0부터 16.1.0 미만의 모든 버전이다. 기능이 추가되는 수 버전은 사용하지 않는다
 
+유의적 버전은 어디까지나 개발자들 간의 약속일 뿐 정말로 해당 API의 버전이 이 유의적 버전에 맞춰 구현돼 있는지는 알 수 없다
 
+
+의존성
+package.json에서 dependencies란 npm 프로젝트를 운영하는 데 필요한 자신 외의 npm라이브러리를 정의해 둔 목록
+JSON 형식으로 작성돼 있으며 주로 dependencies와 devDependencies로 구성돼 있다 그리고 peerDependencies도 있지만 이는 주로 라이브러리에서 사용
+
+- dependencies: package.json에서 npm install을 실행하면 설치되는 의존성이며 npm install 패키지명을 실행하면 dependencies에 추가 해당 프로젝트를 실행하는데 꼭 필요한 패키지가 여기에 선언
+
+- devDependencies: package.json에서 npm install을 실행하면 설치되는 의존성이며 npm install 패키지명 --save-dev를 실행하면 devDependencies에 추가 해당 프로젝트를 실행하는 데는 필요하지 않지만 개발 단계에서 필요한 패키지들을 여기에 선언
+
+- peerDependencies: 주로 서비스보다는 라이브러리와 패키지에서 자주 쓰이는 단위 이는 직접적으로 해당 패키지는 require하거나 import 하지는 않지만 호환성으로 인해 필요한 경우를 의미 만약 재사용 가능한 훅을 제공하는 패키지를 만든다고 가정 시 이 경우 실제 react를 import하는 일은 경우에 따라 없을 수도 있지만 사용하려면 리액트 16.8.6 버전 이상이 필요하다 단순히 useCounter를 제공한다고 해서 쓸모 있는 것이 아니라 리액트 훅을 제공하는 버전을 설치한 서비스에서 사용해야만 올바르게 사용할 수 있을 것이다 
+예시
+{
+    "peerDependencies": {
+        "react": ">=16.8",
+        "react-dom": ">=16.8"
+    }
+}
+
+react, react-dom, next = 실행에 반드시 필요한 패키지이므로 dependencies
+eslint, jest, typescript = 실행에는 필요하지 않은 개발 단계에서 필요한 패키지이므로 devDependencies
+
+최근에는 이런 구분에 의문을 제기하는 목소리도 있다
+1. 어느 의존성에 선언하든 모두 node_modules에 동일하게 설치 그리고 이 중에서 실제 서비스에 배포해야 하는 라이브러리인지를 결정하는 것은 번들러
+번들러가 코드의 시작점에서부터 각 파일 간의 종속성을 판단한 다음 필요한 파일을 빌드 과정을 거쳐 하나의 결과물로 만듦 
+즉 dependencies와 devDependencies 간의 차이가 애플리케이션 최종 결과물에는 전혀 영향을 미치지 않는다
+
+2. 과거에는 이러한 구분이 의미가 있었던 이유가 개발 과정에서는 npm install로 설치해 모든 패키지를 설치하고 실제 프로젝트를 실행할 때는 npm install --only=production으로 실행해 필요한 패키지만 빠르게 설치하는 전략이 주효했다
+typescript를 설치한다고 가정 시 devDependencies에 설치하고 마찬가지로 @types/와 같은 타이핑 파일도 devDependencies에 설치할 것이다
+과거의 패키지 전략대로라면 npm install --only=production만으로 빌드와 실행이 돼야 한다 그러나 실제로는 애플리케이션 시작은 커녕 빌드조차 할 수 없다
+typescript와 관련 패키지가 devDependencies에 선언된 탓에 tsc가 실행되지 못한다 
+
+이러한 이유로 일부 프로젝트를 보면 둘을 구분하지 않고 모두 dependencies에 몰아넣고 관리하는 경우도 있다
+
+npm에 업로드할 패키지를 개발한다면 이러한 두 의존성의 구분은 매우 중요해진다 dependencies에 있는 패키지들만 모두 최종 패키지 결과물에 포함되게 해야 한다

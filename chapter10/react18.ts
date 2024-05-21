@@ -221,3 +221,180 @@
     // 이는 startTransition이 작업을 지연시키는 작업과 비동기로 함수가 실행되는 작업 사이에 불일치가 일어나기 때문
 }
 
+{
+    // useDeferredValue
+    // 리액트 컴포넌트 트리에서 리렌더링이 급하지 않은 부분을 지연할 수 있게 도와주는 훅
+    // 특정 시간 동안 발생한 이벤트를 하나오 인식해 한 번만 실행하게 해주는 디바운스와 비슷하지만 디바운스 대비 useDeferredValue 만이 가진 장점이
+    // 몇 가지 있다
+
+    // 디바운스는 고정된 지연 시간을 필요로 하지만 useDeferredValue는 고정된 지연 시간 없이 첫 번째 렌더링이 완료된 이후에 지연된 렌더링을 수행한다
+    // 그러므로 이 지연된 렌더링은 중단할 수도 있으며 사용자의 인터랙션을 차단하지도 않는다
+
+    export default function input() {
+        const [text, setText] = useState('')
+        const deferredText = useDeferredValue(text)
+
+        const list = useMemo(() => {
+            const arr = Array.from({ length: deferredText.length }).map(
+                (_) => deferredText,
+            )
+
+            return (
+                <ul>
+                    {arr.map((str, indext) => (
+                       <li key={indext}>{str}</li>
+                    ))}
+                </ul>
+            )
+        }, [deferredText])
+
+        function handleChange(e: ChangeEvent<HTMLInputElement>){
+            setText(e.target.value)
+        }
+
+        returm (
+            <>
+                <input value={text} onChange={handleChange} />
+                {list}
+            </>
+        )
+    }
+
+    // list를 생성하는 기준을 text가 아닌 deferredText로 설정함으로써 잦은 변경이 있는 text를 먼저 업데이트해 렌더링하고 이후 여유가 있을 때 
+    // 지연된 deferredText를 활용해 새로운 list를 새로 생성하게 된다
+    // list에 있는 작업이 더 무겁고 오래 걸릴수록 useDeferredValue를 사용하는 이점을 더욱 누릴 수 있다
+
+    // useDeferredValue와 useTransition의 방시그이 차이가 있지만 지연된 렌더링을 한다는 점에서 모두 동일한 역할을 한다
+    // 만약 낮은 우선순위로 처리해야 할 작업에 대해 직접적으로 상태를 업데이트할 수 있는 코드에 접근할 수 있다면 useTransition을 사용하는 것이 좋다
+    // 그러나 컴포넌트의 props와 같이 상태 업데이트에 관여할 수 없고 오로지 값만 받아야 하는 상황이라면 useDeferredValue를 사용하는 것이 타당하다
+}
+
+{
+    // useSyncEcternalStore
+    // 일반적인 애플리케이션 코드를 작성할 때는 사용할 일이 별로 없다
+    // useSubscription의 구현이 리액트 18에서 useSyncEcternalStore로 대체되었다
+    
+    // 테어링(tearing)
+    // 영어로 찢어진다라는 뜻으로 리액트에서 하나의 state 값이 있음에도 서로 다른 값 (보통 state나 props의 이전과 이후)을 기준으로 렌더링되는 현상
+    // 리액트 17에서는 이러한 현상이 일어날 여지가 없지만 리액트 18에서는 비동기 렌더링을 지원하는 훅을 사용해서 최적화가 가능해지면서 동시성 이슈가 발생할 수 있다
+
+    // 예를 들어 startTransition으로 렌더링을 일시 중지했다고 가정할때
+    // 이러한 일시 중지 관정에서 값이 업데이트되면 동일한 하나의 변수(데이터)에 대해서 서로 다른 컴포넌트 형태가 나타날 수 있다
+    // 1. A 컴포넌트에서 외부 데이터 스토어의 값이 파란색이었으므로 파란색을 렌더링
+    // 2. B, C 컴포넌트들도 파란색으로 렌더링 준비
+    // 3. 그러다 갑자기 외부 데이터 스토어의 값이 빨간색으로 변경
+    // 4. B, C 컴포넌트들은 렌더링 도중에 바뀐 색을 확인해 빨간색으로 렌더링
+    // 5. 같은 데이터 소스를 발보고 있음에도 컴포넌트의 색상이 달라지는 테어링 현상 발생
+
+    // 리액트 내부에서 문제를 해결하기 위해 해당 훅들에 처리를 해뒀지만 리액트가 관리할 수 없는 외부 데이터 소스에서라면 문제가 달라진다
+    // 리액트가 관리할 수 없는 외부 데이터 소스 
+    // 리액트의 클로저 범위 밖에 있는 값들 (글로벌 변수, document.body, window.innerWidth, DOM, 리액트 외부에 상태를 저장하는 외부 상태 관리 라이브러리 등)
+    // 즉 useState나 useReducer가 아닌 모든 것들
+    // 이러한 외부 데이터 소스에 리액트에서 추구하는 동시성 처리가 추가돼 있지 않다면 테어링 현상이 발생할 수 있다
+    // 이러한 문제를 해결하기 위한 훅이 useSyncExternalStore다
+
+    import { useSyncExternalStore } from 'react'
+
+    useSyncExternalStore(
+        subscribe: (callback) => Unsubscribe
+        getSnapshot: () => State
+    ) => State
+
+    // 첫 번째 인수는 subscribe로 콜백 함수를 받아 스토어에 등록하는 용도 스토어에 있는 값이 변경되면 이 콜백이 호출 그리고 useSyncExternalStore는
+    // 이 훅을 사용하는 컴포넌트를 리렌더링
+
+    // 두 번째 인수는 컴포넌트에 필요한 현재 스토어의 데이터를 반환하는 함수 이 함수는 변경되지 않았다면 매번 함수를 호출할 때마다 동일한 값을 반환해야 한다
+    // 스토어에서 값이 변경됐다면 이 값을 이전 값과 Object.is로 비교해 정말로 값이 변경됐다면 컴포넌트를 리렌더링한다
+
+    // 마지막 인수는 옵셔널 값으로 서버 사이드 렌더링 시에 내부 리액트를 하이드레이션하는 도중에만 사용
+    // 서버 사이드에서 렌더링되는 훅이라면 이 값을 넘겨줘야 하며 클라이언트의 값과 불일치가 발생할 경우 오류 발생
+
+    // 훅 사용 예제
+    // innerWidth는 리액트 외부에 있는 데이터 값이므로 이 값의 변경 여부를 확인해 리렌더링
+    import { useSyncExternalStore } from 'react'
+
+    // useSyncExternalStore가 제공하는 callback 함수를 받고 callback 함수는 Window와 UIEvent를 저장하는 코드가 있는듯함
+    // 즉 리사이즈가 일어날때마다 callback이 실행되면서 window와 ev를 저장
+    function subscribe(callback: (this: Window, ev: UIEvent) => void) {
+        window.addEventListener('resize', callback)
+
+        return () => {
+            window.removeEventListener('resize', callback)
+        }
+    }
+
+    export default function App() {
+        const windowSize = useSyncExternalStore(
+            // resize 이벤트 발생시 해당 콜백 실행
+            subscribe,
+            // 현재 스토어의 값
+            () => window.innerWidth,
+            // 서버 사이드에서는 해당 값을 추적할 수 없으므로 0을 제공
+            () => 0, //서버 사이드 렌더링 시 제공되는 기본값
+        )
+    }
+
+    return <>{windowSize}</>
+
+    // 이를 하나의 훅으로 만들어서 다음과 같이 사용 가능
+    function subscribe(callback: (this: Window, ev:UIEvent) => void){
+        window.addEventListener('resize', callback)
+
+        return () => {
+            window.removeEventListener('resize', callback)
+        }
+    }
+
+    function useWindowWidth() {
+        return useSyncExternalStore(
+            subscribe,
+            () => window.innerWidth,
+            () => 0
+        )
+    }
+
+    export default function App() {
+        const windowSize = useWindowWidth()
+        return <>{windowSize}</>
+    }
+
+    // 이전에도 useSyncExternalStore가 없어도 이와 비슷한 훅을 만들 수 있었다
+    function useWindowWidth() {
+        const [windowWidth, setWindowWidth] = useState(0)
+
+        useEffect(() => {
+            function handleResize() {
+                setWindowWidth(window.innerWidth)
+            }
+
+            window.addEventListener('resize', handleResize)
+
+            return () => window.removeEventListener('resize', handleResize)
+        }, [])
+
+        return windowWidth
+    }
+
+    // 예제의 차이를 검증하기 위한 코드 (startTransition을 이용한다고 가정)
+    // posts...
+    const PostsTab = memo(function PostsTab() {
+        const width1 = useWindowWidthWithSyncExternalStore()
+        const width2 = useWindowWidth()
+        const items = Array.from({ length: 1500 }).map((_, i) => (
+            <SlowPost key={i} index={i} />
+        ))
+
+        return (
+            <>
+                <div>useSyncExternalStore {width1}px</div>
+                <div>useEffect + useState {width2}px</div>
+                <ul className="items">{items}</ul>
+            </>
+        )
+    })
+
+    export default PostsTab
+
+    // useSyncExternalStore를 사용한 컴포넌트 훅은 컴포넌트 렌더링 이후 정확하게 바로 현재의 width를 가져온다
+    // 사용하지 않은 쪽은 초깃값인 0을 나타낸다
+}

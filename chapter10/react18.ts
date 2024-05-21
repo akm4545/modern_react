@@ -606,6 +606,161 @@
 }
 
 {
-    
+    // renderToReadableStream
+    // renderToPipeableStream이 Node.js 환경에서 렌더링을 위해 사용
+    // renderToReadableStream은 웹 스트립(web stream)을 기반으로 작동한다
+    // 이는 서버 환경이 아닌 클라우드플레어(Cloudflare)나 디노(Deno) 같은 웹 스트림을 사용하는 모던 엣지 런타임 환경에서 사용되는 메서드
+    // 실제 웹 애플리케이션 개발 시 해당 메서드를 사용할 일이 거의 없을 것이다
 }
+
+{
+    // 자동 배치(Automatic Batching)
+    // 리액트가 여러 상태 업데이트를 하나의 리렌더링으로 묶어서 성능을 향상시키는 방법
+    // 예를 들어 버튼 클릭 한 번에 두 개 이상의 state를 동이세 업데이트 한다고 가정 시 자동 배치에서는 이를 하나의 리렌더링으로 묶어서 수행
+
+    // 예제
+    import { profiler, useEffect, useState, useCallback} from 'react'
+
+    const sleep = (ms:number) => {
+        return new Promise((resolve) => setTimeout(resolve, ms))
+    }
+
+    export default function App() {
+        const [count, setCount] = useState(0)
+        const [flag, setFlag] = useState(false)
+
+        const callback = useCallback(
+            (id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+                console.group(phase)
+                console.table({ id, phase, commitTime })
+                console.groupEnd()
+            },
+            [],
+        )
+
+        useEffect(() => {
+            console.log('rendered!')
+        })
+
+        function handleClick() {
+            sleep(3000).then(() => {
+                setCount((c) => c + 1)
+                setFlag((f) => !f)
+            })
+        }
+
+        return (
+            <Profiler id="React18" onRender={callback}>
+                <button onClick={handleClick}>Next</button>
+                <h1 style={{ color: flag ? 'blue' : 'black' }}>{count}</h1>
+            </Profiler>
+        )
+    }
+
+    // 리액트 17에서는 두 번의 리렌더링이 일어나지만 18에서는 자동 배치로 리렌더링이 한 번만 일어난다
+    // Promise를 사용해 고의로 실행을 지연시키는 sleep 함수를 호출하지 않으면 버전과 상관없이 동일하게 한 번만 렌더링된다
+    // 리액트 17이하의 과거 버전의 경우 이벤트 핸들러 내부에서는 이러한 자동 배치 작업이 이뤄지고 있었지만 비동기 이벤트에서는 자동 배치가
+    // 이뤄지지 않고 있기 때문이다 
+    // 즉 동기, 비동기 일관성이 없고 이를 보완하기 위해 리액트 18버전부터는 루트 컴포넌트를 createRoot를 사용해서 만들면 모든 업데이트가 배치 작업으로 최적화된다
+
+    import React from 'react'
+    import ReactDOM from 'react-dom/client'
+    import App from './App'
+
+    const rootElement = document.getElementById('root')
+    const root = ReactDOM.createRoot(rootElement)
+
+    root.render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>,
+    )
+
+    // root를 ReactDOM.createRoot를 활용해 렌더링하도록 하면 자동 배치가 활성화되어 리액트가 동기, 비동기, 이벤트 핸들러 등에 관계 없이 렌더링을 배치로 수행
+
+    // 18버전에서 비활성화 하거나 이러한 작동 방식이 기존 코드에 영향을 미칠 것으로 예상된다면 flushSync를 사용하면 된다
+    import { flushSync } from 'react-dom'
+
+    function handleClick() {
+        flushSync(() => {
+            setCounter((c) => c + 1)
+        })
+
+        flushSync(() => {
+            setFlag((f) => !f)
+        })
+    }
+
+    // flushSync는 react가 아닌 react-dom에서 제공
+}
+
+{
+    // 리액트의 엄격 모드
+    // 리액트에서 제공하는 컴포넌트 중 하나 리액트 애플리케이션에서 발생할 수도 있는 잠재적인 버그를 찾는 데 도움이 되는 컴포넌트다
+    // 리액트에서 널리 알려져 있는 Fragement나 Suspnece와 마찬가지로 컴포넌트 형태로 선언해서 사용할 수 있다
+
+    import { StrictMode } from 'react'
+    import { createRoot } from 'react-dom/client'
+
+    const root = createRoot(document.getElementById('root'))
+
+    root.render(
+        <StrictMode>
+            <App />
+        </StrictMode>,
+    )
+
+    // 엄격 모드는 개발자 모드에서만 작동
+    // 컴포넌트 형태이므로 이 예제처럼 모든 리액트 애플리케이션 전체에서 작동할 수도 원한다면 특정 컴포넌트 내부에서만 작동하게 할 수도 있다
+}
+
+{
+    // 더 이상 안전하지 않은 특정 생명주기를 사용하는 컴포넌트에 대한 경고
+    // componentWillMount, componentWillReceiveProps, componentWillUpdate는 더 이상 사용할 수 없게 되었다
+    // 16.3 버전부터는 UNSAFE_가 붙게 됐고 16 이후에서는 UNSAFE_가 붙지 않은 생명주기 메서드를 사용하면 경고 로그가 기록
+    // 17 버전부터는 UNSAFE_가 붙은 세 메서드만 남고 나머지는 삭제
+
+    class UnsafeClassComponent extends Component {
+        componentWillMount() {
+            console.log('componentWillMount')
+        }
+
+        render(){
+            return <>안녕하세요?</>
+        }
+    }
+
+    // 엄격 모드로 실행시 경고 로그 발생
+}
+
+{
+    // 문자열 ref 사용 금지
+    // 과거 리액트에서는 레거시 문자열 ref라 해서 createRef가 없어도 컴포넌트 내부에서 문자열로 ref를 생성하고 
+    // 이를 사용해 DOM노드를 참조하는 것이 가능했다
+    class UnsafeClassComponent extends Component {
+        componentDidMount() {
+            // 'refs' is deprecated.
+            // <input type="text" />
+            console.log(this.refs.myInput)
+        }
+
+        // myInput이라는 문자열로 ref에 할당
+        // 이를 토대로 refs를 바탕으로 DOM에 접근 가능
+        return() {
+            return (
+                <div>
+                    <input type="text" ref="myInput" />
+                </div>
+            )
+        }
+    }
+
+    // 엄격 모드에서 경고 로그 출력
+    // 문자열 ref의 문제점
+    // 문자열로 값을 주는 것은 여러 컴포넌트에 걸쳐 사용될 수 있으므로 충돌의 여지가 있다
+    // 단순 문자열로만 존재하기 때문에 실재로 어떤 ref에서 참조되고 있는지 파악하기 어렵다
+    // 리액트가 계속해서 현재 렌더링되고 있는 컴포넌트의 ref의 값을 추적해야 하기 때문에 성능 이슈가 있다
+}
+
+
 

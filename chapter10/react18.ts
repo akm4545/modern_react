@@ -497,4 +497,115 @@
     // 서버에서도 컴포넌트를 생성하는 API에 변경이 있다
 }
 
+{
+    // renderToPipeableStream
+    // 리액트 컴포넌트를 HTML로 렌더링하는 메서드
+    // 스트림을 지원하는 메서드로 HTML을 점진적으로 렌더링하고 클라이언트에서는 중간에 script를 삽입하는 등의 작업을 할 수 있다
+    // 이를 통해 서버에서는 Suspense를 사용해 빠르게 렌더링이 필요한 부분을 먼저 렌더링 할 수 있고 값비싼 연산으로 구성된 부분은
+    // 이후에 렌더링되게끔 할 수 있다
+
+    // hydrateRoot를 호출하면 서버에서는 HTML을 렌더링하고 클라이언트의 리액트에서는 여기에 이벤트만 추가함으로써 첫 번째 로딩을 매우 빠르게 
+    // 수행할 수 있다
+
+    import * as React from 'react'
+
+    //res는 HTTP 응답이다
+    function render(url, res){
+        let didError = false
+
+        // 서버에서 필요한 데이터를 불러온다
+        // 그리고 여기에서 데이터를 불러오는 데 오랜 시간이 걸린다고 가정
+        const data = createServerData()
+        const stream = renderToPipableStream(
+            // 데이터를 context API로 넘긴다
+            <DataProvider data={data} />
+                <App assets={assets} />
+            </DataProvider>,
+            {
+                // 렌더링 시에 포함시켜야 할 자바스크립트 번들
+                bootstrapScripts: [assets['main.js']],
+                onSehllReady(){
+                    // 에러 발생 시 처리 후가
+                    res.statusCode = didError ? 500 : 200
+                    res.setHeader('Content-type', 'text/html')
+                    stream.pipe(res)
+                },
+                onError(x){
+                    didError = true
+                    console.error(x)
+                },
+            },
+        )
+
+        // 렌더링 시작 이후 일정 시간이 흐르면 렌더링에 실패한 것으로 간주하고 취소
+        setTimeout(() => stream.abort(), ABORT_DELAY)
+    }
+
+    export default function App({assets}) {
+        return (
+            <Html assets={assets} title="Hello">
+                <Suspense fallback={<Spinner />}>
+                    <ErrorBoundary FallbackComponent={Error}>
+                        <Content />
+                    </ErrorBoundary>
+                </Suspense>
+            </Html>
+        );
+    }
+
+    function Content() {
+        return (
+            <Layout>
+                <NavBar />
+                <article className="post">
+                    <section className="comments">
+                        <h2>Comments</h2>
+                        // 데이터가 불러오기 전에 보여줄 컴포넌트
+                        <Suspense fallback={<Spinner />}>
+                            // 데이터가 완료된 후에 노출되는 컴포넌트
+                            <Comments />
+                        </Suspense>
+                    </section>
+                    <h2>Thanks for reading!</h2>
+                </article>
+            </Layout>
+        );
+    }
+
+    // renderToPipeableStream을 쓰면 최초에 브라우저는 아직 불러오지 못한 데이터 부분을 Suspense의 fallback으로 받는다
+
+    <main>
+        <article class="post">
+            // ...
+            <h1>Hello world</h1>
+            // ...
+            <section class="comments">
+                <h2>Comments</h2>
+                <template id="B:0"></template>
+                // Suspense의 fallback이 온다
+                <div
+                    class="spinner spinner--active"
+                    role="progressbar"
+                    aria-busy="true"
+                ></div>
+            </section>
+            <h2>Thanks for reading!</h2>
+        </article>
+    </main>
+
+    // createServerData의 데이터 로딩이 끝나면 <Comments/>가 데이터를 가지고 렌더링된다
+
+    // 기존 renderToNodeStream의 문제는 무조건 렌더링을 순서대로 해야 하고 그 순서에 의존적이기 때문에 이전 렌더링이 완료되지 않는다면 이후 렌더링도
+    // 끝나지 않는다 따라서 만약에 렌더링 중간에 오래 걸리는 작업이 있다면 그 작업 때문에 나머지 렌더링도 덩달아 지연된다는 문제가 있다
+    // 18에서 새롭게 추가된 renderToPipeableStream을 활용하면 순서나 오래 걸리는 렌더링에 영향받을 필요 없이 빠르게 렌더링 수행 가능하다
+
+    // 리액트 18에서 제공하는 <Suspense />d와 같은 코드 분할 내지는 지연 렌더링을 서버 사이드에서 완전히 사용하기 위해서는
+    // renderToPipeableStream 대신 이 메서드를 사용해야 한다
+    // 실제로 renderToPipeableStream을 가지고 서버 사이드 렌더링을 만드는 경우는 거의 없겠지만 사용하고자 하는 프레임워크에서 리액트 18을
+    // 사용하고 싶다면 해당 메서드의 지원 여부를 확인해 보는 것이 좋다
+}
+
+{
+    
+}
 

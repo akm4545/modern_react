@@ -762,5 +762,248 @@
     // 리액트가 계속해서 현재 렌더링되고 있는 컴포넌트의 ref의 값을 추적해야 하기 때문에 성능 이슈가 있다
 }
 
+{
+    // findDOMNode에 대한 경고 출력
+    // 클래스 컴포넌트 인스턴스에서 실제 DOM 요소에 대한 참조를 가져올 수 있는 메서드
+    class UnsafeClassComponent extends Component {
+        componentDidMount() {
+            const node = ReactDOM.findDOMNode(this)
 
+            if(node){
+                ;(node as HTMLDivElement).style.color = 'red'
+            }
+        }
+
+        render() {
+            return <div>UnsafeClassComponent</div>
+        }
+    }
+
+    // findDOMNode() 메서드를 활용해 클래스 컴포넌트의 요소에 직접 접근해 해당 DOM 요소의 스타일 수정 코드
+
+    // findDOMNode의 문제점
+    // 부모가 특정 자식만 별도로 렌더링하는 것이 가능해진다 이는 리액트가 추구하는 트리 추상화 구조를 무너뜨린다
+    // 이는 자식 컴포넌트의 렌더링을 위해서는 부모 컴포넌트의 렌더링이 일어나야 한다는 리액트의 추상화를 무너뜨린다
+    // findDOMNode는 항상 첫 번째 자식을 반환하는데 이는 Fragment를 사용할 때 어색해진다는 문제점이 있다
+    // findDOMNode는 일회성 API라는 특징 때문에 자식 컴포넌트가 특정 시점에서 다른 노드를 렌더링할 경우 이러한 변경 사항을 추적할 수 
+    // 없다는 문제점이 있다
+    // findDOMNode는 항상 변하지 않는 단일 노드를 반환하는 정적인 컴포넌트에만 정상적으로 작동하는 반쪽짜리 메서드다
+}
+
+{
+    // 구 Context API 사용 시 발생하는 경고
+    // childContextTypes와 getChildContext를 사용하는 구 리액트 COntext API를 사용하면 엄격 모드에서 에러 출력
+}
+
+{
+    // 예상치 못한 부작용(side-effects) 검사
+    // 리액트 엄격 모드 내부에서는 다음 내용을 의도적으로 이중으로 호출
+    // 클래스 컴포넌트의 constructor, render, shouldComponentUpdate.getDerivedStateFromProps
+    // 클래스 컴포넌트의 setState의 첫 번째 인수
+    // 함수 컴포넌트의 body
+    // useState, useMemo, useReducer에 전달되는 함수
+
+    export default function App () {
+        console.log('component body')
+
+        const [number, setNumber] = useState(() => {
+            console.log('initialize state')
+            return 0
+        })
+
+        const handleClick = useCallback(() => {
+            setNumber((prev) => prev + 1)
+        }, [])
+
+        const tenTimes = useMemo(() => {
+            console.log('* 10!')
+            return number * 10
+        }, [number])
+
+        return <button onClick={handleClick}>{tenTimes} 클릭</button>
+    }
+
+    // 위 코드를 실행하면 로그가 두번씩 찍힌다
+    // 함수형 프로그래밍의 원칙에 따라 리액트의 모든 컴포넌트는 항상 순수하다고 가정하기 때문에 
+    // 엄격 모드에서는 앞에서 언급한 내용이 실제로 지켜지고 있는지 즉 항상 순수한 결과물을 내고 있는지 개발자에게 확인시켜 주기 위해 두 번 실행
+    // state, props, context가 변경되지 않으면 (입력 값이 변경되지 않으면) 항상 동일한 JSX를 (항상 같은 결과물을) 반환해야 한다
+}
+
+{
+    // 리액트 18에서 추가된 엄격 모드
+    // 향후 리액트에서는 컴포넌트가 마운트 해제된 상태에서도 컴포넌트 내부의 상태값을 유지할 수 있는 기능을 제공할 예정이라고 밝혔다
+    // 예를 들어 뒤로가기 후 현재 화면으로 돌아왔을 때
+    // 이러한 기능 지원을 위해 엄격 모드의 개발 모드에 새로운 기능을 도입했다
+    // 컴포넌트가 최초에 마운트될 때 자동으로 모든 컴포넌트를 마운트 해제하고 두 번째 마운트에서 이전 상태를 복원한다
+
+    import { useEffect } from 'react'
+
+    let count = 0
+    export default function App () {
+        useEffect(() => {
+            count += 1
+            console.log(`mount App, ${count}`)
+
+            return () => {
+                console.log(`unmount app ${count}`)
+            }
+        })
+
+        return <h1>hello</h1>
+    }
+
+    // 리액트 18 실행 시
+    // mount App, 1
+    // unmount app 1
+    // mount App, 2
+
+    // 리액트 17 실행 시
+    // mount App, 1
+
+    // 이후의 변경을 위해 StrictMode에서 고의로 useEffect를 두 번 작동시키는 내용을 추가
+    // 미래에 있을 리액트 업데이트에 대비하려면 useEffect 호출에도 자유로운 컴포넌트를 작성하는 것이 좋다
+}
+
+{
+    // Suspense 기능 강화
+    // Suspense는 리액트 16.6 버전에서 실험 버전으로 도입된 기능 
+    // 컴포넌트를 동적으로 가져올 수 있게 도와주는 기능
+
+    // Sample Component
+    export default function SampleComponent() {
+        return <>동적으로 가져오는 컴포넌트</>
+    }
+
+    // app.tsx
+    import { Suspense, lazy } from 'react'
+
+    const DynamicSampleComponent = lazy(() => import('./SampleComponent'))
+
+    export default function App() {
+        return (
+            <Suspense fallback={<>로딩중</>}>
+                <DynamicSampleComponent />
+            </Suspense>
+        )
+    }
+
+    // React.lazy
+    // 컴포넌트를 첫 번째 렌더링 시에 불러오지 않고 최초 렌더링 이후에 컴포넌트를 지연시켜 불러오는 역할
+    // Suspense는 React.lazy를 통해 지연시켜 불러온 컴포넌트를 렌더링하는 역할
+
+    // Suspense는 두 개의 인수를 받는다
+    // fallback props
+    // 지연시켜 불러온 컴포넌트를 미처 불러오지 못했을 때 보여주는 fallback
+    // children 
+    // React.lazy로 선언한 지연 컴포넌트를 받는다
+
+    // 상대적으로 중요하지 않은 컴포넌트를 분할해 초기 렌더링 속도를 향상시키는데 많은 도움을 줬다
+    // 그러나 18 이전의 Suspense에는 몇 가지 문제점이 있다
+    // 기존의 Suspense는 컴포넌트가 아직 보이기도 전에 useEffect가 실행되는 문제가 존재
+    function ProfilePage() {
+        // initialResource는 Promise로 데이터를 불러오는 데 어느 정도 시간이 필요함
+        const [resource, setResource] = useState(initialResource)
+
+        return (
+            <>
+                <Suspense
+                    fallback={
+                        <>
+                            <h1>Loading profile...</h1>
+                        </>
+                    }
+                >
+                    <Suspense fallback={<h1>Loading posts...</h1>}>
+                        <Sibling name="two" />
+                        <ProfilerTimeline resource={resource} />
+                    </Suspense>
+                </Suspense>
+            </>
+        )
+    }
+
+    // 개발자의 의도응 비동기 데이터 로딩이 끝나기 전까지는 <Suspense> 하단의 컴포넌트가 렌더링되지 않게 하는 것이다
+    // <Suspense>의 자식으로 존재하는 <Sibling>은 비록 비동기 데이터에 의존하지 않지만 Suspense의 자식으로 존재하므로 반드시 Suspense의 
+    // fallback이 종료된 이후에 effect가 실행돼야만 했다
+    // 이는 UI 상으로는 문제가 없었지만 실제 useEffect나 useLayoutEffect 등으로 보면 아직 <Suspense>작업이 진행 중임에도 불구하고 <Sibling>
+    // 의 effect가 실행되는 버그가 있었다
+
+    // Suspense는 서버에서 사용할 수 없었다
+
+    // components/SampleComponent.tsx
+    export default function SampleComponent() {
+        return <>동적으로 가져오는 컴포넌트</>
+    }
+
+    // pages/index.tsx
+    import { Suspense, lazy } from 'react'
+
+    const DynamicSampleComponent = lazy(
+        () => import('../components/SampleComponent'),
+    )
+
+    export default function Home() {
+        return (
+            <Suspense fallback={<>로딩중</>}>
+                <DynamicSampleComponent />
+            </Suspense>
+        )
+    }
+
+    // 이 코드는 Next.js에서 Suspense를 사용하는 코드다 
+    // 실행 시 에러 발생
+    // 기존 서버 사이드 렌더링 구조에서 Suspense를 활용하려면 useMount와 같은 훅을 구현해서 반드시 클라이언트에서만 작동하도록 처리해야 했다
+
+    import { Suspense, useEffect, useState, ComponentProps } from 'react'
+
+    function useMounted(){
+        const [mounted, setMounted] = useState(false)
+
+        // useEffect는 클라이언트에서만 실행되므로 mounted가 true면
+        // 클라이언트에서 실행되는 코드다
+        useEffect(() => {
+            setMounted(true)
+        }, [])
+
+        return mounted
+    }
+
+    export default function CustomSuspense(
+        props: ComponentProps<typeof Suspense>,
+    ){
+        const isMounted = useMounted()
+
+        if(isMounted){
+            return <Suspense {...props} ></Suspense>
+        }
+
+        return <>{props.fallback}</>
+    }
+    
+    // 이제 리액트 18버전에서도 지원된다
+    // 변경 내용
+    // 마운트되기 직전임에도 effect가 빠르게 실행되는 문제 수정
+    // Suspense로 인해 컴포넌트가 보이거나 사라질 때도 effect가 정상적으로 실행
+    // Suspense를 서버에서도 사용 가능
+    // Suspense내에 스로틀링 추가 화면이 너무 자주 업데이트되어 시각적으로 방해받는 것을 방지하기 위해 리액트는 다음 렌더링을 보여주기 전에 잠시 대기
+    // 중첩된 Suspense의 fallback이 있다면 자동으로 스로틀되어 최대한 자연스럽게 보여주기 위해 노력한다
+
+    // Suspense를 사용할 수 있는 시나리오는 제한적인 편이다 
+    // React.lazy를 사용해 지연시켜 컴포넌트를 불러오거나 Next.js와 같이 Suspense를 자체적으로 지원하는 프레임워크에서만 Suspense를 사용하는것이 가능
+}
+
+{
+    // 인터넷 익스플로러 지원 중다네 따른 추가 폴리필 필요
+    // 이제 리액트는 리액트를 사용하는 코드에서 다음과 같은 최신 자바스크립트 기능을 사용할 수 있다는 가정하에 배포
+    // Promise: 비동기 연산이 종료된 이후에 실패 또는 결곽값을 확인할 수 있는 객체
+    // Symbol: 자바스크립트의 새로운 데이터 형식 익명으로 객체 속성을 만들 수 있는 특성을 가진 객체
+    // Object.assign: 객체의 열거 가능한 모든 속성을 다른 객체로 붙여 넣는 메서드
+}
+
+{
+    // 그 밖에
+    // 컴포넌트에서 undefined를 반환해도 에러가 발생하지 않는다 undefined 반환은 null 반환과 동일하게 처리
+    // 이와 마찬가지로 <Suspense fallback={undeined}>도 null과 동일하게 처리
+    // renderToNodeStream이 지원 중단 그 대신 renderToPipeableStream을 사용하는 것이 권장
+}
 

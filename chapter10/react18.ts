@@ -398,3 +398,103 @@
     // useSyncExternalStore를 사용한 컴포넌트 훅은 컴포넌트 렌더링 이후 정확하게 바로 현재의 width를 가져온다
     // 사용하지 않은 쪽은 초깃값인 0을 나타낸다
 }
+
+{
+    // useInsertionEffect
+    // CSS-in-js 라이브러리를 위한 훅
+    // CSS의 추가 및 수정은 브라우저에서 렌더링하는 작업 대부분을 다시 계산해 작업해야하는데 이는 리액트 관점으로 본다면 
+    // 모든 컴포넌트에 영향을 미칠 수 있는 매우 무거운 작업
+    // 따라서 리액트 17과 styled-components에서는 클라이언트 렌더링 시에 이러한 작업이 발생하지 않도록 서버 사이드에서 스타일 코드 삽입
+    // 이 작업을 훅으로 처리하는 것은 지금까지 쉽지 않았는데 훅에서 이러한 작업을 할 수 있도록 도와주는 새로운 훅이 바로 useInsertionEffect다
+    
+    // useInsertionEffect의 기본적인 훅 구조는 useEffect와 동일 
+    // 실행 시점이 다른데 useInsertionEffect는 DOM이 실제로 변경되기 전에 동기적으로 실행
+    // 이 훅 내부에 스타일을 삽입하는 코드를 넣음으로써 브라우저가 레이아웃을 계산하기 전에 실행될 수 있게끔 해서 좀 더 자연스러운 스타일 삽입이 가능해진다
+
+    // Effect 훅의 실행 순서
+    function index() {
+        useEffect(() => {
+            console.log('useEffect!') //3
+        })
+
+        useLayoutEffect(() => {
+            console.log('useLayoutEffect!') //2
+        })
+
+        useInsertionEffect(() => {
+            console.log('useInsertionEffect!') //1
+        })
+    }
+
+    // useLayoutEffect는 모든 DOM의 변경 작업이 다 끝난 이후에 실행
+    // useInsertionEffect는 DOM 변경 작업 이전에 실행
+    // 이러한 차이는 브라우저가 다시금 스타일을 입혀서 DOM을 재계산하지 않아도 된다는 점에서 매우 크다고 볼 수 있다
+    // useInsertionEffect는 실제 애플리케이션 코드를 작성할 때는 사용될 일이 거의 없으므로 라이브러리를 작성하는 경우가 아니라면 참고만 하고 실제
+    // 애플리케이션 코드에는 가급적 사용하지 않는 것이 좋다
+}
+
+{
+    // react-dom/client
+    // 클라이언트에서 리액트 트리를 만들 때 사용되는 API가 변경
+    // 리액트 18로 업그레이드할 때 반드시 index.{t|j}jsx에 있는 내용을 변경해야 한다
+}
+
+{
+    // createRoot
+    // 기존의 react-dom에 있던 render 메서드를 대체할 새로운 메서드
+    // 리액트 18의 기능을 사용하고 싶다면 createRoot와 render를 함께 사용해야 한다
+
+    // before
+    import ReactDOM from 'react-dom'   
+    import App from 'App'
+
+    const container = document.getElementById('root')
+
+    ReactDOM.render(<App />, container)
+
+    //after
+    import ReactDOM from 'react-dom'
+    import App from 'App'
+
+    const container = document.getElementById('root')
+
+    const root = ReactDOM.createRoot(container)
+    root.render(<App />)
+
+    // 리액트 18로 업그레이드를 고려하고 있다면 리액트의 루트 컴포넌트가 렌더링되고 있는 곳에서 위와 같이 코드를 변경해야 한다
+}
+
+{
+    // hydrateRoot
+    // 서버 사이드 렌더링 애플리케이션에서 하이드레이션을 하기 위한 새로운 메서드
+    // React DOM 서버 API와 함께 사용
+
+    //before
+    import ReactDOM from 'react-dom'
+    import App from 'App'
+
+    const container = document.getElementById('root')
+
+    ReactDOM.hydrate(<App />, container)
+
+    //after
+    import ReactDOM from 'react-dom'
+    import App from 'App'
+
+    const container = document.getElementById('root')
+
+    const root = ReactDOM.hydrateRoot(container, <App />)
+
+    // 대부분의 서버 사이드 렌더링은 프레임워크에 의존하고 있을 것이므로 사용하는 쪽에서 수정할 일은 거의 없는 코드다
+    // 다만 자체적으로 서버 사이드 렌더링을구현해서 사용하고 있다면 이 부분 역시 수정해야 한다
+    // 추가된 두 API는 새로운 옵션인 onRecoverableError를 인수로 받는다 
+    // 이 옵션은 리액트가 렌더링 또는 하이드레이션 과정에서 에러가 발생했을 때 실행하는 콜백 함수다 
+    // 기본값으로 reportError 또는 console.error를 사용하지만 필요시 원하는 내용 추가
+}
+
+{
+    // react-dom/server
+    // 서버에서도 컴포넌트를 생성하는 API에 변경이 있다
+}
+
+

@@ -315,5 +315,97 @@
 }
 
 {
+    // not-found.js
+    // 특정 라우팅 하위의 주소를 찾을 수 없는 404 페이지를 렌더링 할때 사용
+
+    export default function NotFound() {
+        return (
+            <>
+                <h2>Not Found</h2>
+                <p>404</p>
+            </>
+        )
+    }
+
+    // 이 컴포넌트는 서버 컴포넌트로 구성하면 된다
+}
+
+{
+    // loading.js
+    // 리액트 Suspense를 기반으로 해당 컴포넌트가 불러오는 중임을 나타낼 때 사용
+
+    export default function Loading(){
+        return 'Loading...'
+    }
+
+    // 이 컴포넌트는 'use client' 지시자를 사용해 클라이언트에서 렌더링되게 할 수도 있다
+}
+
+{
+    // route.js
+    // Next.js 13.4.0에서 app 디렉터리가 나오면서 이전까지 지원하지 못했던 /pages/api에 대한 app 디렉터리 내부의 지원도 추가 
+    // pages/api와 동일하게 /app/api를 기준으로 디렉터리 라우팅을 지원
+    // /api에 대해서도 파일명 라우팅이 없어졌다
+    // 그 대신 디렉터리가 라우팅 주소를 담당 파일명은 route.js로 통일 
+
+    // /app/api/hello/route.ts에 예제 코드
+    import { NextRequest } from 'next/server'
+
+    export async function GET(request: Request) {}
+
+    export async function HEAD(request: Request) {}
+
+    export async function POST(request: Request) {}
+
+    export async function PUT(request: Request) {}
+
+    export async function DELETE(request: Request) {}
+
+    export async function PATCH(request: Request) {}
+
+    export async function OPTIONS(request: Request) {}
+
+    // 이 route.ts 파일 내부에 REST API의 get, post와 같은 메서드명을 예약어로 선언해 두면 HTTP 요청에 맞게 해당 메서드 호출
+    // app/api 외에 다른 곳에서 선언해도 작동 
+
+    // 다음과 같이 파일을 만들어도 /api 요청을 하는 것과 마찬가지로 작동
+    // apps/internal-api/hello/route.ts
+    import { NextRequest } from 'next/server'
+
+    export async function GET(request: NextRequest){
+        return new Response(JSON.stringify({ name: 'hello' }), {
+            status: 200,
+            headers: {
+                'content-type': 'application/json'
+            },
+        })
+    }
+
+    // 라우팅 명칭에 자유도가 생긴 대신 route.ts가 존재하는 폴더 내부에는 page.tsx가 존재할 수 없다 (경고 발생)
     
+    // route 함수들이 받을 수 있는 파라미터
+    // request: NextRequest 객체, fetch의 Request를 확장한 Next.js만의 Reqeust
+    // 이 객체에는 API 요청과 관련된 cookie, headers 뿐만 아니라 nextUrl 같은 주소 객체도 확인 가능
+
+    // context: params만을 가지고 있는 객체 이 객체는 앞서 파일 기반 라우팅에서 언급한 것과 동일하게 동적 라우팅 파라미터 객체가 포함돼 있다
+    // 이 객체는 Next.js에서 별도 인터페이스를 제공하지 않으므로 주소의 필요에 따라 원하는 형식으로 선언하면 된다
+
+    // 예제
+    // app/api/users/[id]/route.ts
+    export async function GET(
+        request: NextRequest,
+        context: { params: { id: string }},
+    ){
+        const response = await fetch(
+            `https://jsonplaceholder.typicode.com/users/${context.params.id}`,
+        )
+
+        // ...
+        return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: {
+                'content-type': 'application/json'
+            },
+        })
+    }
 }

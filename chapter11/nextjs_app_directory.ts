@@ -254,3 +254,66 @@
         )
     }
 }
+
+{
+    // page.js
+    // page도 예약어이다 
+    // Next.js에서 일반적으로 다뤘던 페이지를 의미한다
+
+    // page가 받는 props
+    // params: 옵셔널 값으로 [...id]와 같은 동적 라우트 파리미터를 사용할 경우 해당 파리미터 값이 들어온다
+
+    // searchParams: URL에서 ?a=1과 같은 URLSearchParams를 의미한다 ?a=1&b=2로 접근할 경우 
+    // searchParams에는 { a: '1', b: '2' }라는 자바스크립트 객체 값이 오게 된다 이 값은 layout에서는 제공되지 않는다
+    // 그 이유는 layout은 페이지 탐색 중에는 리렌더링을 수행하지 않기 때문이다
+    // 즉 같은 페이지에서 search parameter만 다르게 라우팅을 시도하는 경우 layout을 리렌더링하는 것은 불필요하기 때문
+    // 만약 search parameter에 의존적인 작업을 해야 한다면 반드시 page 내부에서 수행
+
+    // page의 규칙
+    // page도 app 디렉터리 내부의 예약어 무조건 page.{js|jsx|ts|tsx}로 사용해야 하며 레이아웃 이외의 다른 목적으로는 사용할 수 없다
+    // page도 내부에 반드시 export default로 내보내는 컴포넌트가 있어야 한다
+}
+
+{
+    // error.js
+    // error.js는 해당 라우팅 영역에서 사용되는 공통 에러 컴포넌트
+    // error.js를 사용하면 특정 라우팅 별로 서로 다른 에러 UI를 렌더링하는 것이 가능
+
+    'use client'
+
+    import { useEffect } from 'react'
+
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export default function Error({
+        error,
+        reset,
+    }: {
+        error: Error
+        reset: () => void
+    }) {
+        useEffect(() => {
+            // eslint-disable-next-line no-console
+            console.log('logging error:', error)
+        }, [error])
+
+        return (
+            <>
+                <div>
+                    <strong>Error:</string> {error?.message}
+                </div>
+                <div>
+                    <button onClick={() => reset()}>에러 리셋</button>
+                </div>
+            </>
+        )
+    }
+
+    // error 페이지는 에러 정보를 담고 있는 error:Error 객체와 에러 바운더리를 초기화할 reset: () => void를 props로 받는다 
+    // 에러 바운더리는 클라이언트에서만 작동하므로 error 컴포넌트도 클라이언트 컴포넌트여야 한다
+    // error 컴포넌트는 같은 수준의 layout에서 에러가 발생할 경우 해당 error 컴포넌트로 이동하지 않는다
+    // Layout 에러를 처리하고 싶다면 상위 컴포넌트의 error을 사용하거나 app의 루트 에러 처리를 담당하는 app/global-error.js 페이지를 생성
+}
+
+{
+    
+}

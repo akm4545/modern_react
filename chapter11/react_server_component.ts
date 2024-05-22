@@ -168,3 +168,93 @@
     // 이런 두 구족의 장점을 모두 취하고자 하는 것이 리액트 서버 컴포넌트다
 }
 
+{
+    // 서버 컴포넌트란 하나의 언어, 하나의 프레임워크, 하나의 API와 개념을 사용하면서 서버와 클라이언트 모두에서 컴포넌트를 렌더링 할 수 있는 기법
+    // 서버에서 할 수 잇는 일은 서버가 처리하게 두고 서버가 할 수 없는 나머지 작업은 클아이언트인 브라우저에서 수행된다
+
+    // 즉 일부는 서버, 일부는 클라이언트에서 렌더링되는 것이다
+    // 한 가지 명심해야 할점은 클라이언트 컴포넌트는 서버 컴포넌트를 import 할 수 없다는 것이다
+    // 만약 클라이언트 컴포넌트가 서버 컴포넌트를 불러오게 된다면 클라이언트 컴포넌트는 서버 컴포넌트를 실행할 방법이 없기 때문에 컴포넌트를 호출 할 수 없다
+
+    // 서버 컴포넌트의 이론에 따르면 모든 컴포넌트는 서버 컴포넌트가 될 수도 있고 클라이언트 컴포넌트가 될 수도 있다
+    // 이런 구조가 가능한 이유는 children으로 자주 사용되는 ReactNode에 있다
+
+    // ClientComponent.jsx
+    'use client'
+    // 이렇게 클라이언트 컴포넌트에서 서버 컴포넌트를 불러오는 것은 불가능하다
+    import ServerComponent from './ServerComponent.server'
+
+    export default function ClientComponent(){
+        return (
+            <div>
+                <ServerComponent></ServerComponent>
+            </div>
+        )
+    }
+
+    'use client'
+    // ClientComponent.jsx
+    export default function ClientComponent({ children }){
+        return (
+            <div>
+                <h1>클라이언트 컴포넌트</h1>
+                {children}
+            </div>
+        )
+    }
+
+    // ServerComponent.jsx
+    export default function ServerComponent() {
+        return <span>서버 컴포넌트</span>
+    }
+
+    // ParentServerComponent.jsx
+    // 이 컴포넌트는 서버 컴포넌트일 수도, 클라이언트 컴포넌트일 수도 있다
+    // 따라서 두 군데 모두에서 사용할 수 있다
+    import ClientComponent from './ClientComponent'
+    import ServerComponent from './ServerComponent'
+
+    export default function ParentServerComponent() {
+        return (
+            <ClientComponent>
+                <ServerComponent></ServerComponent>
+            </ClientComponent>
+        )
+    }
+
+    // 리액트 서버 컴포넌트를 기반으로 리액트 컴포넌트 트리를 설계할 때 어떠한 제한이 생기는지 나타낸 코드
+    // 서버 컴포넌트와 클라이언트 컴포넌트가 있으며 동시에 두 군데에서 모두 사용할 수 있는 공용 컴포넌트가 있다
+
+    // 서버 컴포넌트
+    // 요청이 오면 그 순간 서버에서 딱 한 번 실행될 뿐이므로 상태를 가질 수 없다 따라서 리액트에서 상태를 가질 수 있는 useState, useReducer등의 훅을
+    // 사용할 수 없다
+    
+    // 렌더링 생명주기도 사용할 수 없다 한번 렌더링되면 그걸로 끝이기 때문이다 따라서 useEffect, useLayoutEffect를 사용할 수 없다
+
+    // 앞의 두 가지 제약사항으로 인해 effect나 state에 의존하는 사용자 정의 훅 또한 사용할 수 없다
+    // 다만 effect나 state에 의존하지 않고 서버에서 제공할 수 있는 기능만 사용하는 훅이라면 충분히 사용 가능
+
+    // 브라우저에서 실행되지 않고 서버에서만 실행되기 떄문에 DOM API를 쓰거나 window, document등에 접근할 수 없다
+
+    // 데이터베이스, 내부 서비스, 파일 시스템 등 서버에만 있는 데이터를 async/await으로 접근할 수 있다
+    // 컴포넌트 자체가 async한 것이 가능하다
+
+    // 다른 서버 컴포넌트를 렌더링하거나 div, span, p 같은 요소를 렌더링하거나 혹은 클라이언트 컴포넌트를 렌더링 할 수 있다
+
+    // 클라이언트 컴포넌트
+    // 브라우저 환경에서만 실행되므로 서버 컴포넌트를 불러오간 서버 전용 훅이나 유틸리티를 불러올 수 없다
+
+    // 서버 컴포넌트가 클라이언트 컴포넌트를 렌더링 하는데 그 클라이언트 컴포넌트가 자식으로 서버 컴포넌트를 갖는 구조는 가능하다
+    // 그 이유는 클라이언트 입장에서 봤을 때 서버 컴포넌트는 이미 서버에서 만들어진 트리를 가지고 있을 것이고 클라이언트 컴포넌트는 이미
+    // 서버에서 만들어진 그 트리를 삽입해 보여주기만 하기 때문이다 따라서 서버 컴포넌트와 클라이언트 컴포넌트를 중첩해서 갖는 구조로 설계하는
+    // 것이 가능하다
+
+    // 공용 컴포넌트(shared components)
+    // 이 컴포넌트는 서버와 클라이언트 모두에서 사용할 수 있다 공통으로 사용하는 만큼 당연히 서버컴포넌트와 클라이언트 컴포넌트의 모든 제약을 받는
+    // 컴포넌트가 된다
+}
+
+{
+    
+}
+

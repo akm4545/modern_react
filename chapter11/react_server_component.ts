@@ -255,6 +255,22 @@
 }
 
 {
-    
+    // 리액트는 모든 것을 다 공용 컴포넌트로 판단한다
+    // 즉 모든 컴포넌트를 다 서버에서 실행 가능한 것으로 분류한다
+    // 대신 클라이언트 컴포넌트라는 것을 명시적으로 선언하려면 파일의 맨 첫 줄에 "use client"라고 작성해 두면 된다
+    // 클라이언트 컴포넌트가 서버 컴포넌트를 import 하는 상황에서는 빌드 시 에러가 난다
+
+    //Component.js
+    'use client'
+
+    import OtherClientComponent from './OtherClientComponent'
+
+    function ClientComponent() {
+        const [state, setState] = useState(false)
+
+        return <OtherClientComponent onClick={() => setState(true)} value={state}></OtherClientComponent>
+    }
+
+    // 만약 .server.tsx .client.tsx와 같은 파일명으로 구분한다면 이는 v1 기준 문서이다 현재는 'use client'로 변경
 }
 

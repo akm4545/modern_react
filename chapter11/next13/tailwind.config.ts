@@ -5,6 +5,9 @@ module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './src/components/**/*.{js,ts,jsx,tsx}',
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   future: {
     hoverOnlyWhenSupported: true,
@@ -23,12 +26,12 @@ module.exports = {
           violet: '#7928CA',
         },
       },
-      backgroundImage: ({ theme }) => ({
+      backgroundImage: ({ theme }: { theme: any}) => ({
         'vc-border-gradient': `radial-gradient(at left top, ${theme(
           'colors.gray.500',
         )}, 50px, ${theme('colors.gray.800')} 50%)`,
       }),
-      keyframes: ({ theme }) => ({
+      keyframes: ({ theme } : { theme: any}) => ({
         rerender: {
           '0%': {
             'border-color': theme('colors.vercel.pink'),

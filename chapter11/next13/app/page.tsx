@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { demos } from "@/src/constant/menu";
+import { demos } from "#constant/menu";
 
 export default function Page() {
   return (

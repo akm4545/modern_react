@@ -4,8 +4,6 @@ import { TabGroup } from "#components/TabGroup";
 const ids = [{ id: '1'}, { id: '2' }, { id: '3' }, { id: '4' }]
 
 export default function Layout({ children }: { children: ReactNode }){
-    console.log(ids);
-
     return (
         <div className="space-y-9">
             <div className="flex justify-between">
@@ -23,7 +21,7 @@ export default function Layout({ children }: { children: ReactNode }){
                 />
             </div>
 
-            <div>{children}</div>
+            <div id='test'>{children}</div>
         </div>
     )
 }

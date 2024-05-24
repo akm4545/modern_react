@@ -43,3 +43,17 @@ Next.js 13이전까지 정적 페이지 생성을 위해 getStaticProps나 getSt
 
 Next.js 13에서는 app 디렉터리가 생겨나면서 getStaticProps와 getStaticPaths는 사라졌지만 이와 유사한 방식을 fetch와 cache를 이용해
 구현할 수 있다
+
+/app/ssg/[id]/page.tsx 경로의 코드를 보면
+generateStaticParams를 사용해 /app/ssg/[id]에서 [id]로 사용 가능한 값을 객체 배열로 모아뒀다
+page 컴포넌트에서는 이 각각의 id를 props로 받을 때 어떻게 작동할지 미리 정해뒀다
+
+이전 서버 사이드 렌더링 예제와는 다르게 fetchPostById에는 별다른 옵션을 주지 않았다
+이것은 가능한 모든 cache 값을 사용하도록 설정한 것과 같다
+
+빌드 결과물을 볼 수 있는 ./next/server/app 아래에 generateStaticParams로 선언한 모든 경우의 수에 대해 미리 페이지를 생성해둔다
+따라서 실제 페이지에 접근할 때는 별다른 추가적인 작업없이 이 HTML만으로도 페이지를 확인할 수 있으므로 사용자는 더욱 빠르게 접속할 수 있다
+
+정적 빌드 뿐만 아니라 캐시를 활용할 수 있다 이러한 방식은 Next.js 에서는 Incremental Static Regeneration 이라고 하는데 정적으로 생성된 페이지를
+점진적으로 갱신하는 것을 의미한다 
+Next.js에서 제공하는 캐시와 관련된 기능을 활용하면 일정 기간 동안은 캐시를 통해 빠르게 렌더링하고 시간이 지나면 새롭게 데이터를 불러오는 방식으로 페이지를 구성할 수 있다

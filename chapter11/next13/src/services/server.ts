@@ -44,7 +44,7 @@ interface Todo {
     completed: boolean
 }
 
-export async function fetchTodos(): Promise<Array<Toto>> {
+export async function fetchTodos(): Promise<Array<Todo>> {
     const response = await fetch('https://jsonplaceholder.typicode.com/todos')
     const result: Array<Todo> = await response.json()
 

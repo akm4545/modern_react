@@ -6,6 +6,9 @@ export interface Item {
 }
 
 export const TabGroup = ({ path, items }: { path: string, items: Item[] }) => {
+    console.log(path)
+    console.log(items);
+
     return (
         <div className='flex flex-wrap gap-2 items-center'>
             {items.map((item) => (

@@ -1,68 +1,74 @@
 import kv from '@vercel/kv'
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache'
 
 interface Data {
-    name: string
-    age: number
+  name: string
+  age: number
 }
 
-export default async function Page({ params }: { params: { id: string }}) {
-    const key = `test:${params.id}`
-    const data = await kv.get<Data>(key)
-    
-    async function handleSubmit(formData: FormData) {
-        'use server'
+export default async function Page({ params }: { params: { id: string } }) {
+  const key = `test:${params.id}`
+  //const data = await kv.get<Data>(key)
+  const data = {
+    name: "test",
+    age: 1
+  };
 
-        const name = formData.get('name')
-        const age = formData.get('age')
+  async function handleSubmit(formData: FormData) {
+    'use server'
 
-        await kv.set(key, {
-            name,
-            age,
-        })
+    const name = formData.get('name')
+    const age = formData.get('age')
 
-        revalidatePath(`/server-action/form/${params.id}`)
-    }
+    await kv.set(key, {
+      name,
+      age,
+    })
 
-    return (
-        <div className='space-y-4'>
-            <h1 className='text-xl font-medium text-gray-400/80'>form with data</h1>
-            <h2 className='text-l font-medium text-gray-400/80'>
-                서버에 저장된 정보: {data?.name} {data?.age}
-            </h2>
+    revalidatePath(`/server-action/form/${params.id}`)
+  }
 
-            <div className='space-y-4'>
-                <ul className='list-disc space-y-2 pl-4 text-sm text-gray-300'>
-                    <li>아래 버튼을 누르면 서버에서 직접 form 요청을 보냅니다.</li>
-                    <form action={handleSubmit}>
-                        <li>
-                            <label htmlFor='name'>이름: </label>
-                            <input
-                                type='text'
-                                id='name'
-                                name='name'
-                                defaultValue={data?.name}
-                                placeholder='이름을 입력해주세요.'
-                            />
-                        </li>
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-medium text-gray-400/80">form with data</h1>
+      <h2 className="text-l font-medium text-gray-400/80">
+        서버에 저장된 정보: {data?.name} {data?.age}
+      </h2>
 
-                        <li>
-                            <label htmlFor='age'>나이: </label>
-                            <input 
-                                type='number'
-                                id='age'
-                                name='age'
-                                defaultValue={data?.age}
-                                placeholder='나이를 입력해주세요.'
-                            />
-                        </li>
+      <div className="space-y-4">
+        <ul className="list-disc space-y-2 pl-4 text-sm text-gray-300">
+          <li>아래 버튼을 누르면 서버에서 직접 form 요청을 보냅니다.
+            (kv token 이슈로 작동 안하는듯함)
+          </li>
+          <form action={handleSubmit}>
+            <li>
+              <label htmlFor="name">이름: </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                defaultValue={data?.name}
+                placeholder="이름을 입력해주세요."
+              />
+            </li>
 
-                        <li>
-                            <button type='submit'>submit</button>
-                        </li>
-                    </form>
-                </ul>
-            </div>
-        </div>
-    )
+            <li>
+              <label htmlFor="age">나이: </label>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                defaultValue={data?.age}
+                placeholder="나이를 입력해주세요."
+              />
+            </li>
+
+            <li>
+              <button type="submit">submit</button>
+            </li>
+          </form>
+        </ul>
+      </div>
+    </div>
+  )
 }

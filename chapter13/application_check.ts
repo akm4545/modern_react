@@ -66,3 +66,40 @@
 
     reportWebVitals(sendToAnalytics)
 }
+
+{
+    // nextjs 에서는 성능 측정 메서드인 NextWebVitalsMetric을 제공한다 
+
+    // _app
+    import { AppProps, NextWebVitalsMetric } from 'next/app'
+
+    // @description 메트릭을 측정한다
+    // export declare type NextWebVitalsMetric = {
+    //     id: string;
+    //     startTime: number;
+    //     value: number;
+    // } & ({
+    //     label: 'web-vital';
+    //     name: 'FCP' | 'LCP' | 'CLS' | 'FID' | 'TTFB' | 'INP';
+    // } | {
+    //     label: 'custom';
+    //     name: 'Next.js-hydration' | 'Next.js-route-change-to-render' | 'Next.js-render';
+    // }) 
+
+    export function reportWebvital(metric: NextWebVitalsMetric) {
+        console.log(metric)
+    }
+
+    function MyApp({ Component, pageProps }: AppProps) {
+        return <Component {...pageProps}></Component>
+    }
+
+    export default MyApp
+
+    // 핵심 웹 지표 외에도 Next.js에 특화된 사용자 지표도 제공
+    // Next.js-hydration: 페이지가 서버 사이드에서 렌더링되어 하이드레이션하는 데 걸린 시간
+    // Next.js-route-change-to-render: 페이지가 경로를 변경한 후 페이지 렌더링을 시작하는 데 걸린 시간
+    // Next.js-render: 경로 변경이 완료된 후 페이지를 렌더링하는 데 걸린 시간
+
+    // 모든 단위는 밀리초(ms)다
+}

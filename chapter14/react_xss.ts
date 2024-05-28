@@ -41,4 +41,23 @@
 
 {
     // useRef를 활용한 직접 삽입
+    // useRef를 사용하면 직접 DOM에 접근할 수 있으므로 앞서와 비슷한 방식으로 innerHTML에 보안 취약점이 있는 스크립트를 삽입하면 동일한 문제 발생
+    const html = `<span><svg/onload=alert(origin)></span>`
+
+    function App() {
+        const divRef = useRef<HTMLDivElement>(null)
+
+        useEffect(() => {
+            if(divRef.current){
+                divRef.current.innerHTML = html
+            }
+        })
+
+        return <div ref={divRef}></div>
+    }
+}
+
+{
+    // <script>나 svg/onload를 사용하는 방식 외에도 <a>태그에 잘못된 href를 삽입하거나 onclick, onload등 이벤트를 활용하는 등 여러 가지 방식의
+    // XSS가 있지만 공통적인 문제는 웹사이트 개발자가 만들지 않은 코드를 삽입한다는 것에 있다
 }

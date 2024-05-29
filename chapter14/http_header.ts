@@ -212,3 +212,66 @@
 
     // 이 컴포넌트에서 submit을 누르면 에러 메시지가 출력되면서 작동하지 않는다
 }
+
+{
+    // 보안 헤더 설정하기
+    // Next.js
+    // 애플리케이션 보안을 위해 HTTP 경로별로 보안 헤더를 적용할 수 있다
+    // 이 설정은 next.config.js에서 다음과 같이 추가할 수 있다
+    const securityHeaders = [
+        {
+            key: 'key',
+            value: 'value',
+        },
+    ]
+
+    module.exports = {
+        async headers() {
+            return [
+                {
+                    // 모든 주소에 설정한다
+                    source: '/:path*',
+                    headers: securityHeaders,
+                }
+            ]
+        }
+    }
+
+    // 설정 가능한 값
+    // X-DNS-Prefetch-Control
+    // Strict-Transport-Security
+    // X-XSS-Protection
+    // X-Frame-Options
+    // Permissions-Policy
+    // X-Content-Type-Options
+    // Referrer-Policy
+    // Content-Security-Policy: 지시어가 굉장히 많디 때문에 다음과 같이 개별적으로 선언한 이후에 묶어주는 것이 더 편리하다
+    const ContentSecurityPolicies = [
+        {key: 'default-src', value: "'self'"},
+        {key: 'script-src', value: "'self' example.com"},
+    ]
+
+    const securityHeaders = [
+        {
+            key: 'Content-Security-Policy',
+            value: ContentSecurityPolicies.map(
+                (item) => `${item.key} ${item.value}`,
+            ).join(' '),
+        },
+    ]
+
+
+    // NGINX
+    // 정적인 파일을 제공하는 NGINX의 경우 다음과 같이 경로별로 add_header 지시자를 사용해 원하는 응답 헤더를 추가할 수 있다
+    location / {
+        # ...
+        add_header X-XSS-Protection "1; mode=block";
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; child-src e_m; style-src 'self' example.com; font-src 'self';";
+        # ...
+    }
+}
+
+{
+    // 보안 헤더 확인하기
+    // https://securityheaders.com/을 방문하여 헤더를 확인하고 싶은 웹사이트의 주소를 입력하면 보안 헤더 상황을 알 수 있다
+}

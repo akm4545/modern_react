@@ -61,3 +61,110 @@
     // <script>나 svg/onload를 사용하는 방식 외에도 <a>태그에 잘못된 href를 삽입하거나 onclick, onload등 이벤트를 활용하는 등 여러 가지 방식의
     // XSS가 있지만 공통적인 문제는 웹사이트 개발자가 만들지 않은 코드를 삽입한다는 것에 있다
 }
+
+{
+    // 리액트에서 XSS문제를 피하는 방법
+    // 제 3자가 삽입할 수 있는 HTML을 안전한 HTML 코드로 한 번 치환하는 것
+    // 이러한 과정을 새니타이즈(sanitize) 또는 이스케이프(escape)라고 하는데 npm에 있는 라이브러리를 사용하면 된다
+
+    // 유명한 새니타이즈 라이브러리
+    // DOMpurity(https://github.com/cure53/DOMPurity)
+    // sanitize-html(https://github.com/apostrophecms/sanitize-html)
+    // js-xss(https://github.com/leizongmin/js-xss)
+
+    // sanitize-html을 사용한 예제
+
+    import sanitizeHtml, { IOptions as SanitizeOptions } from 'sanitize-html'
+
+    // 허용하는 태그
+    const allowedTags = [
+        'div',
+        'p',
+        'span',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'figure',
+        'iframe',
+        'a',
+        'strong',
+        'i',
+        'br',
+        'img'
+    ]
+
+    // 위 태그에서 허용할 모든 속성
+    const defaultArrtibutes = ['style', 'class']
+
+    // 허용할 iframe 도메인
+    const allowedIframeDomains = ['naver.com']
+
+    // 허용되는 태그 중 추가로 허용할 속성
+    const allowedAttributeForTags: {
+        [key in (typeof allowedTags)[number]]: Array<string>
+    } = {
+        iframe: ['src', 'allowfullscreen', 'scrolling', 'frameborder', 'allow'],
+        img: ['src', 'alt'],
+        a: ['href'],
+    }
+
+    // allowedTags, allowedAttributeForTags, defaultAttributes를 기반으로
+    // 허용할 태그와 속성을 정의
+    const allowedAttributes = allowedTags.reduce<
+        SanitizeOptions['allowedAttributes']
+    >((result, tag) => {
+        const additionalAttrs = allowedAttributeForTags[tag] || []
+        return { ...result, [tag]: [...additionalAttrs, ...defaultArrtibutes] }
+    }, {})
+
+    // ...
+    const sanitizedOptions: SanitizeOptions = {
+        allowedTags,
+        allowedAttributes,
+        allowedIframeDomains,
+        allowIframeRelativeUrls: true,
+    }
+
+    const html = '<span><svg/onload=alert(origin)></span>'
+
+    function App() {
+        // 위 옵션을 기반으로 HTML을 이스케이프한다
+        // svg는 허용된 태그가 아니므로 <span></span>만 남는다
+        const sanitizeHtml = sanitizeHtml(html, sanitizedOptions)
+
+        return <div dangerouslySetInnerHTML={{__html: sanitizeHtml }}></div>
+    }
+
+    // sanitize-html은 허용할 태그와 목록을 일일히 나열하는 이른바 허용 목록(allow list) 방식을 채택하기 떄문에 사용하기가 매우 귀찮게 
+    // 느껴질 수도 있지만 이 방식이 훨씬 안전하다
+
+    // 허용 목록에 추가하는 것을 깜박한 태그나 속성이 있다면 단순히 HTML이 안 보이는 사소한 이슈로 그치겠지만 차단 목록(block list)으로 해야
+    // 할 것을 놓친다면 그 즉시 보안 이슈로 연결되기 떄문이다
+
+    // 사용자가 콘텐츠를 저장할 때도 한번 이스케이프 과정을 거치는 것이 더 효율적이고 안전하다 
+    // 애초에 XSS 위험성이 있는 콘텐츠를 데이터베이스에 저장하지 않는 것이 예기치 못한 위험을 방지하는 데 훨씬 도움이 될뿐만 아니라 한번 
+    // 이스케이프하면 그 뒤로 보여줄 때마다 일ㅇ리이 이스케이프 과정을 거치지 않아도 되므로 훨씬 효율적이다
+
+    // 이러한 치환 과저은 되도록 서버에서 수행하는 것이 좋다
+    // POST 요청을 스크립트나 curl등으로 직접 요청하는 경우에는 스크립트에서 실행하는 이스케이프 과정을 생략하고 바로 저장될 가능성이 있다
+    // 클라이언트에서 사용자가 입력한 데이터는 일단 의심한다 라는 자세로 클라이언트의 POST 요청에 있는 HTML을 이스케이프하는 것이 제일 안전하다
+
+    // 단순히 게시판과 같은 예시가 웹사이트에 없더라 하더라도 XSS 문제는 충분히 발생할 수 있다
+    // 예를 들어 다음과 같이 쿼리스트링에 있는 내용을 그대로 실행하거나 보여주는 경우에도 보안 취약점이 발생할 수 있다
+
+    import { useRouter } from 'next/router'
+
+    function App () {
+        const router = useRouter()
+        const query = router.query
+        const html = query?.html?.toString() || ''
+
+        return <div dangerouslySetInnerHTML={{ __html: html }} ></div>
+    }
+
+    // 개발자는 자신이 작성한 코드가 아닌 query, GET 파라미터, 서버에 저장된 사용자가 입력한 데이터 등 외부에 존재하는 모든 코드를 위험한
+    // 코드로 간주하고 이를 적절하게 처리해야 한다
+}
